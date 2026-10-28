@@ -1,0 +1,54 @@
+name: syncra
+
+x-pg: &pg
+  image: postgres:16-alpine
+  command: ['postgres', '-c', 'synchronous_commit=on']
+  environment:
+    POSTGRES_USER: syncra
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-syncra_dev_password}
+  healthcheck:
+    test: ['CMD-SHELL', 'pg_isready -U syncra -d $$POSTGRES_DB']
+    interval: 3s
+    timeout: 3s
+    retries: 20
+
+services:
+  pg-control:
+    <<: *pg
+    environment:
+      POSTGRES_USER: syncra
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-syncra_dev_password}
+      POSTGRES_DB: syncra_control
+    volumes: [pgdata-control:/var/lib/postgresql/data]
+
+  pg-shard-0:
+    <<: *pg
+    environment:
+      POSTGRES_USER: syncra
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-syncra_dev_password}
+      POSTGRES_DB: syncra_shard_0
+    volumes: [pgdata-shard0:/var/lib/postgresql/data]
+
+  pg-shard-1:
+    <<: *pg
+    environment:
+      POSTGRES_USER: syncra
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-syncra_dev_password}
+      POSTGRES_DB: syncra_shard_1
+    volumes: [pgdata-shard1:/var/lib/postgresql/data]
+
+  redis:
+    image: redis:7.2-alpine
+    command: ['redis-server', '--appendonly', 'yes', '--maxmemory-policy', 'noeviction']
+    volumes: [redisdata:/data]
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata-control:
+  pgdata-shard0:
+  pgdata-shard1:
+  redisdata:
