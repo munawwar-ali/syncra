@@ -1,11 +1,11 @@
-/** One-shot migration runner for the control DB and every shard (Doc 05 P0-T06). */
+/** Runs control and shard migrations (Doc 05 P0-T06). Used by the CLI and by test setup. */
 import { runner } from 'node-pg-migrate';
 import { fileURLToPath } from 'node:url';
 
 const dir = (name: string): string =>
   fileURLToPath(new URL(`./migrations/${name}`, import.meta.url));
 
-async function up(databaseUrl: string, migrationsDir: string, label: string): Promise<void> {
+async function up(databaseUrl: string, migrationsDir: string): Promise<number> {
   const done = await runner({
     databaseUrl,
     dir: migrationsDir,
@@ -13,17 +13,17 @@ async function up(databaseUrl: string, migrationsDir: string, label: string): Pr
     migrationsTable: 'pgmigrations',
     log: () => undefined,
   });
-  console.log(`[migrate] ${label}: ${String(done.length)} applied`);
+  return done.length;
 }
 
-const control = process.env.CONTROL_DATABASE_URL;
-const shards = (process.env.SHARD_DATABASE_URLS ?? '')
-  .split(',')
-  .map((s) => s.trim())
-  .filter(Boolean);
-if (!control || shards.length === 0) {
-  throw new Error('CONTROL_DATABASE_URL and SHARD_DATABASE_URLS are required');
+/** Applies pending migrations; returns how many were applied per database label. */
+export async function migrateAll(
+  controlUrl: string,
+  shardUrls: string[],
+): Promise<Record<string, number>> {
+  const result: Record<string, number> = { control: await up(controlUrl, dir('control')) };
+  for (const [i, url] of shardUrls.entries()) {
+    result[`shard-${String(i)}`] = await up(url, dir('shard'));
+  }
+  return result;
 }
-
-await up(control, dir('control'), 'control');
-for (const [i, url] of shards.entries()) await up(url, dir('shard'), `shard-${String(i)}`);
