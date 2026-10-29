@@ -10,10 +10,13 @@ export interface Deps {
 }
 
 export function createDeps(cfg: Config): Deps {
+  const redis = new Redis(cfg.REDIS_URL, { maxRetriesPerRequest: 1, enableOfflineQueue: false });
+  // Connection errors surface through /readyz; an unhandled 'error' event would crash the process.
+  redis.on('error', () => undefined);
   return {
     control: new pg.Pool({ connectionString: cfg.CONTROL_DATABASE_URL, max: 10 }),
     shards: cfg.SHARD_DATABASE_URLS.map((u) => new pg.Pool({ connectionString: u, max: 20 })),
-    redis: new Redis(cfg.REDIS_URL, { maxRetriesPerRequest: 1, enableOfflineQueue: false }),
+    redis,
   };
 }
 
