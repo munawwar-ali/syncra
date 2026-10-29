@@ -66,7 +66,7 @@ export function useDoc(
   const state = useSyncExternalStore(
     (cb) => (doc ? doc.onState(cb) : () => undefined),
     () => doc?.state ?? 'loading',
-    () => 'loading',
+    (): DocSyncState => 'loading',
   );
   return { doc, state };
 }
