@@ -21,6 +21,7 @@ const schema = z.object({
   METRICS_TOKEN: z.string().default(''),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.string().default(''),
+  DEMO_MODE: bool.default('false'),
   BILLING_ENABLED: bool.default('false'),
   DEFAULT_PLAN: z.enum(['free', 'pro', 'business', 'selfhost']).default('selfhost'),
   BATCH_WINDOW_MS: int(20),
