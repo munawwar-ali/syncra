@@ -15,6 +15,11 @@ describe('resolveAccess', () => {
     expect(resolveAccess(rules, 'templates', 'tpl_2')).toBeNull();
     expect(resolveAccess(rules, 'secrets', 'x')).toBeNull();
   });
+  it('governs the SDK index document by the rules on its collection', () => {
+    expect(resolveAccess(rules, '__index', 'inspections')).toBe('rw');
+    expect(resolveAccess(rules, '__index', 'templates')).toBe('r'); // doc-restricted read rule only
+    expect(resolveAccess(rules, '__index', 'secrets')).toBeNull();
+  });
   it('rw wins over r when both match', () => {
     const both: AccessRule[] = [
       { collection: 'a', docs: '*', mode: 'r' },

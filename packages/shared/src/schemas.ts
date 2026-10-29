@@ -4,6 +4,9 @@ import { z } from 'zod';
 export const DOC_ID_REGEX = /^[A-Za-z0-9_.:-]{1,128}$/;
 export const COLLECTION_REGEX = /^[a-z][a-z0-9_-]{0,63}$/;
 
+/** SDK index documents live in the reserved collection `__index` (Doc 03 §10). */
+export const INDEX_COLLECTION = '__index';
+
 export const docIdSchema = z.string().regex(DOC_ID_REGEX);
 export const collectionSchema = z.string().regex(COLLECTION_REGEX);
 

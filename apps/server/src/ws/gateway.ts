@@ -14,7 +14,13 @@ import {
   encodeMessage,
   type Message,
 } from '@syncra/protocol';
-import { COLLECTION_REGEX, DOC_ID_REGEX, LIMITS, SyncraError } from '@syncra/shared';
+import {
+  COLLECTION_REGEX,
+  DOC_ID_REGEX,
+  INDEX_COLLECTION,
+  LIMITS,
+  SyncraError,
+} from '@syncra/shared';
 import { resolveAccess } from '../auth/access.js';
 import type { ClientClaims, TokenVerifier } from '../auth/jwt.js';
 import type { DocService, HotDoc, Subscriber } from '../core/doc-service.js';
@@ -288,7 +294,11 @@ function parseDocKey(docKey: string): [string, string] {
   const i = docKey.indexOf('/');
   const collection = docKey.slice(0, i);
   const docId = docKey.slice(i + 1);
-  if (i < 0 || !COLLECTION_REGEX.test(collection) || !DOC_ID_REGEX.test(docId)) {
+  if (
+    i < 0 ||
+    (collection !== INDEX_COLLECTION && !COLLECTION_REGEX.test(collection)) ||
+    !DOC_ID_REGEX.test(docId)
+  ) {
     throw new SyncraError('VALIDATION_FAILED', 'Invalid docKey');
   }
   return [collection, docId];

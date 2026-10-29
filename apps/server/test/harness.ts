@@ -17,6 +17,7 @@ export const SECRET = 'test-secret-test-secret-test-secret-1234';
 
 export interface Harness {
   url: string;
+  port: number;
   svc: DocService;
   gateway: Gateway;
   pools: pg.Pool[];
@@ -31,6 +32,7 @@ export function makePools(): pg.Pool[] {
 export async function startServer(
   overrides: Partial<DocServiceOptions> = {},
   pools: pg.Pool[] = makePools(),
+  port = 0,
 ): Promise<Harness> {
   const ring = new ShardRing(pools.length);
   const svc = new DocService({
@@ -51,10 +53,11 @@ export async function startServer(
   });
   const server: Server = createServer();
   gateway.attach(server);
-  await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
-  const port = (server.address() as AddressInfo).port;
+  await new Promise<void>((r) => server.listen(port, '127.0.0.1', r));
+  const boundPort = (server.address() as AddressInfo).port;
   return {
-    url: `ws://127.0.0.1:${String(port)}`,
+    url: `ws://127.0.0.1:${String(boundPort)}`,
+    port: boundPort,
     svc,
     gateway,
     pools,
