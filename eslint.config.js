@@ -17,6 +17,12 @@ export default tseslint.config(
     },
   },
   {
+    // Browser/Node/worker feature detection (navigator.onLine, BroadcastChannel, localStorage) looks
+    // redundant against the DOM typings but is required at runtime.
+    files: ['packages/client/src/**/*.ts'],
+    rules: { '@typescript-eslint/no-unnecessary-condition': 'off' },
+  },
+  {
     files: ['**/*.config.ts', '**/*.config.js', '**/global-setup.ts'],
     rules: { 'import/no-default-export': 'off' },
   },

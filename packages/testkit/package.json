@@ -18,7 +18,10 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@syncra/client": "workspace:*",
-    "@syncra/protocol": "workspace:*"
+    "@syncra/protocol": "workspace:*",
+    "yjs": "^13.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.0"
   }
 }
