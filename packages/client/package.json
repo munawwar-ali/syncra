@@ -23,5 +23,8 @@
     "yjs": "^13.6.0",
     "y-protocols": "^1.0.6",
     "lib0": "^0.2.99"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.0"
   }
 }

@@ -17,7 +17,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['**/*.config.ts', '**/*.config.js'],
+    files: ['**/*.config.ts', '**/*.config.js', '**/global-setup.ts'],
     rules: { 'import/no-default-export': 'off' },
   },
 );

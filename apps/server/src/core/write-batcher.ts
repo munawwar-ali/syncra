@@ -18,37 +18,38 @@ export interface Batch {
   items: BatchItem[];
 }
 
-export interface WriteBatcherOptions {
+export interface WriteBatcherOptions<R> {
   windowMs: number;
   maxBytes: number;
   /** Max documents flushing at once; ready documents are served FIFO so none starves. */
   concurrency?: number;
-  flush: (batch: Batch) => Promise<void>;
+  flush: (batch: Batch) => Promise<R>;
 }
 
-interface Pending extends BatchItem {
-  resolve: () => void;
+interface Pending<R> extends BatchItem {
+  resolve: (r: R) => void;
   reject: (e: unknown) => void;
 }
-interface Buffer {
-  items: Pending[];
+interface Buffer<R> {
+  items: Pending<R>[];
   bytes: number;
   timer: NodeJS.Timeout | undefined;
 }
 
-export class WriteBatcher {
-  private readonly buffers = new Map<string, Buffer>();
+export class WriteBatcher<R = void> {
+  private readonly buffers = new Map<string, Buffer<R>>();
   private readonly ready: string[] = [];
   private readonly inFlight = new Set<string>();
   private idleWaiters: (() => void)[] = [];
   private readonly concurrency: number;
 
-  constructor(private readonly opts: WriteBatcherOptions) {
+  constructor(private readonly opts: WriteBatcherOptions<R>) {
     this.concurrency = opts.concurrency ?? 8;
   }
 
-  add(docKey: string, item: BatchItem): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
+  /** Resolves with the flush result of the batch this item landed in. */
+  add(docKey: string, item: BatchItem): Promise<R> {
+    return new Promise<R>((resolve, reject) => {
       let buf = this.buffers.get(docKey);
       if (!buf) {
         buf = { items: [], bytes: 0, timer: undefined };
@@ -105,14 +106,14 @@ export class WriteBatcher {
     }
   }
 
-  private async flushOne(docKey: string, items: Pending[]): Promise<void> {
+  private async flushOne(docKey: string, items: Pending<R>[]): Promise<void> {
     try {
       const first = items[0];
       const update =
         items.length === 1 && first ? first.update : Y.mergeUpdates(items.map((i) => i.update));
-      await this.opts.flush({ docKey, update, items });
+      const result = await this.opts.flush({ docKey, update, items });
       items.forEach((i) => {
-        i.resolve();
+        i.resolve(result);
       });
     } catch (e) {
       items.forEach((i) => {
