@@ -21,7 +21,12 @@ function loadUser(): DemoUser | null {
 export function App() {
   const [user, setUser] = useState<DemoUser | null>(loadUser);
   return user ? (
-    <Workspace user={user} onLogout={() => setUser(null)} />
+    <Workspace
+      user={user}
+      onLogout={() => {
+        setUser(null);
+      }}
+    />
   ) : (
     <Login onLogin={setUser} />
   );
@@ -50,7 +55,9 @@ function Login({ onLogin }: { onLogin: (u: DemoUser) => void }) {
           id="name"
           className="mb-4 w-full rounded-input border border-line bg-bg px-3 py-2"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => {
+            setName(e.target.value);
+          }}
           autoFocus
         />
         <fieldset className="mb-6">
@@ -62,7 +69,9 @@ function Login({ onLogin }: { onLogin: (u: DemoUser) => void }) {
                 type="button"
                 aria-label={`Color ${c}`}
                 aria-pressed={color === c}
-                onClick={() => setColor(c)}
+                onClick={() => {
+                  setColor(c);
+                }}
                 className="h-8 w-8 rounded-full border-2"
                 style={{ background: c, borderColor: color === c ? 'var(--text)' : 'transparent' }}
               />
@@ -81,9 +90,13 @@ function useHashNote(): [string | null, (id: string | null) => void] {
   const read = (): string | null => /^#\/note\/(.+)$/.exec(location.hash)?.[1] ?? null;
   const [id, setId] = useState(read);
   useEffect(() => {
-    const h = (): void => setId(read());
+    const h = (): void => {
+      setId(read());
+    };
     window.addEventListener('hashchange', h);
-    return () => window.removeEventListener('hashchange', h);
+    return () => {
+      window.removeEventListener('hashchange', h);
+    };
   }, []);
   return [id, (next) => (location.hash = next ? `#/note/${next}` : '')];
 }

@@ -48,7 +48,9 @@ function EditorBody({ doc, id, user }: { doc: SyncraDoc; id: string; user: DemoU
           className="min-w-0 flex-1 bg-transparent text-lg font-semibold outline-none"
           placeholder="Untitled note"
           value={entry?.title ?? ''}
-          onChange={(e) => client.collection('notes').setTitle(id, e.target.value)}
+          onChange={(e) => {
+            client.collection('notes').setTitle(id, e.target.value);
+          }}
         />
         <ul className="flex -space-x-2" aria-label="Collaborators" data-testid="collaborators">
           {others.map((o) => {

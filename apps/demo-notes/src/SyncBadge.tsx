@@ -28,10 +28,14 @@ export function SyncBadge() {
   const s = useSyncStatus();
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 5000);
-    return () => clearInterval(t);
+    const t = setInterval(() => {
+      setNow(Date.now());
+    }, 5000);
+    return () => {
+      clearInterval(t);
+    };
   }, []);
-  const look = LOOKS[s.connection] ?? (LOOKS.idle as Look);
+  const look: Look = LOOKS[s.connection] ?? { label: 'Not connected', dot: 'var(--offline)' };
   return (
     <div className="flex items-center gap-3" role="status" aria-live="polite">
       <span data-testid="sync-badge" data-state={s.connection} className="flex items-center gap-2">

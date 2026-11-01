@@ -23,7 +23,9 @@ export function NotesList(props: {
         {entries.map((e) => (
           <li key={e.id} className="mb-1 flex items-center gap-1">
             <button
-              onClick={() => props.onSelect(e.id)}
+              onClick={() => {
+                props.onSelect(e.id);
+              }}
               aria-current={props.selected === e.id}
               className={`min-w-0 flex-1 truncate rounded-input px-2 py-1.5 text-left ${
                 props.selected === e.id ? 'bg-surface-2 font-medium' : 'hover:bg-surface'

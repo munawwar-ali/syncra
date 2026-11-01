@@ -40,7 +40,9 @@ export function ChaosPanel() {
         </button>
         <button
           className="rounded-input border border-line px-3 py-2 text-left hover:bg-surface"
-          onClick={() => client.dropConnection()}
+          onClick={() => {
+            client.dropConnection();
+          }}
         >
           Drop socket now
         </button>
