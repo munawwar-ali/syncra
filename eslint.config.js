@@ -3,7 +3,16 @@ import tseslint from 'typescript-eslint';
 import importPlugin from 'eslint-plugin-import';
 
 export default tseslint.config(
-  { ignores: ['**/dist/**', '**/node_modules/**', 'docs/**', 'eslint.config.js'] },
+  {
+    ignores: [
+      '**/dist/**',
+      '**/node_modules/**',
+      'docs/**',
+      'eslint.config.js',
+      '**/postcss.config.js',
+      '**/tailwind.config.js',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   {
@@ -21,6 +30,15 @@ export default tseslint.config(
     // redundant against the DOM typings but is required at runtime.
     files: ['packages/client/src/**/*.ts'],
     rules: { '@typescript-eslint/no-unnecessary-condition': 'off' },
+  },
+  {
+    // ioredis-mock ships no resolvable types under NodeNext.
+    files: ['scripts/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'off',
+    },
   },
   {
     files: ['**/*.config.ts', '**/*.config.js', '**/global-setup.ts'],

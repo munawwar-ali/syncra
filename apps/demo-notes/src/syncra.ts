@@ -19,7 +19,10 @@ const delayed: Transport = (url, protocols) => {
   const sock = {
     send: (d: Uint8Array) => {
       if (ws.readyState !== WebSocket.OPEN) return;
-      if (chaos.latencyMs > 0) setTimeout(() => ws.send(d), chaos.latencyMs);
+      if (chaos.latencyMs > 0)
+        setTimeout(() => {
+          ws.send(d);
+        }, chaos.latencyMs);
       else ws.send(d);
     },
     close: (code?: number) => {
@@ -40,10 +43,17 @@ const delayed: Transport = (url, protocols) => {
   return sock;
 };
 
+// Must match apps/server/src/demo/routes.ts: knowing the identity up front lets every tab of a
+// first-ever session share one lock, one BroadcastChannel and one local database.
+const DEMO_TENANT_ID = '00000000-0000-4000-8000-000000000001';
+const demoUserId = (name: string): string =>
+  `demo-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+
 export function makeClient(user: DemoUser): SyncraClient {
   return createClient({
     url: location.origin,
     publishableKey: 'pk_demo',
+    identity: { tenantId: DEMO_TENANT_ID, userId: demoUserId(user.name) },
     getToken: async () => {
       const res = await fetch('/demo/token', {
         method: 'POST',
