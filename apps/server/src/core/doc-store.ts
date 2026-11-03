@@ -53,6 +53,7 @@ export async function findDocument(
 }
 
 export interface LoadedDoc {
+  sizeBytes: number;
   doc: Y.Doc;
   headSeq: number;
   /** Ops read from the log after the snapshot; shows the snapshot shortcut works. */
@@ -78,13 +79,14 @@ export async function loadDoc(pool: pg.Pool, tenantId: string, uid: string): Pro
   doc.transact(() => {
     for (const op of ops.rows) Y.applyUpdate(doc, op.update);
   });
-  const head = await pool.query<{ head_seq: string }>(
-    'select head_seq from documents where uid = $1 and tenant_id = $2',
+  const head = await pool.query<{ head_seq: string; size_bytes: string }>(
+    'select head_seq, size_bytes from documents where uid = $1 and tenant_id = $2',
     [uid, tenantId],
   );
   return {
     doc,
     headSeq: Number(head.rows[0]?.head_seq ?? 0),
+    sizeBytes: Number(head.rows[0]?.size_bytes ?? 0),
     opsRead: ops.rows.length,
   };
 }

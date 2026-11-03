@@ -4,20 +4,23 @@
   "private": true,
   "type": "module",
   "sideEffects": false,
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    }
-  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "dev": "tsx watch src/main.ts",
+    "start": "node dist/main.js"
   },
   "dependencies": {
-    "@syncra/shared": "workspace:*"
+    "@syncra/server": "workspace:*",
+    "ioredis": "^5.4.0",
+    "pg": "^8.13.0",
+    "pino": "^9.4.0",
+    "prom-client": "^15.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.0",
+    "@types/pg": "^8.11.0",
+    "tsx": "^4.19.0"
   }
 }

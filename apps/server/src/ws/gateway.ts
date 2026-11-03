@@ -25,7 +25,20 @@ import { resolveAccess } from '../auth/access.js';
 import type { ClientClaims, TokenVerifier } from '../auth/jwt.js';
 import type { DocService, HotDoc, Subscriber } from '../core/doc-service.js';
 
+/** Hooks that bring rate limits, quotas and metering into the gateway; all optional. */
+export interface GatewayPolicy {
+  /** Per-IP admission at upgrade time. Throw RATE_LIMITED to answer HTTP 429. */
+  admit?(ip: string): Promise<void>;
+  /** Reserves a connection slot. Throw QUOTA_EXCEEDED to close with 4402. */
+  acquire?(tenantId: string): Promise<void>;
+  release?(tenantId: string): void;
+  /** Per-connection message bucket (in-process, no Redis hop). */
+  message?(connId: string): { allowed: boolean; retryAfterMs: number };
+  trustProxy?: boolean;
+}
+
 export interface GatewayOptions {
+  policy?: GatewayPolicy;
   svc: DocService;
   verify: TokenVerifier;
   logger: Logger;
@@ -49,6 +62,10 @@ class Connection implements Subscriber {
   inFlight = 0;
   chain: Promise<void> = Promise.resolve();
   step2Counter = 0;
+  admitted = false;
+  rejected = false;
+  lastRateError = 0;
+  expiryTimer: NodeJS.Timeout | undefined;
 
   constructor(
     readonly ws: WebSocket,
@@ -86,15 +103,18 @@ export class Gateway {
         socket.destroy();
         return;
       }
-      void this.authenticate(req, url)
+      void (async () => {
+        await this.o.policy?.admit?.(this.ipOf(req));
+        return this.authenticate(req, url);
+      })()
         .then(({ claims, clientId }) => {
           this.wss.handleUpgrade(req, socket, head, (ws) => {
             this.onConnection(ws, claims, clientId);
           });
         })
         .catch((e: unknown) => {
-          const status = e instanceof SyncraError && e.code === 'VALIDATION_FAILED' ? 400 : 401;
-          reject(socket, status);
+          const code = e instanceof SyncraError ? e.code : 'UNAUTHENTICATED';
+          reject(socket, code === 'VALIDATION_FAILED' ? 400 : code === 'RATE_LIMITED' ? 429 : 401);
         });
     });
     const every = this.o.pingIntervalMs ?? 30_000;
@@ -106,6 +126,12 @@ export class Gateway {
       }
     }, every);
     this.timer.unref();
+  }
+
+  private ipOf(req: IncomingMessage): string {
+    const fwd = req.headers['x-forwarded-for'];
+    const first = (Array.isArray(fwd) ? fwd[0] : fwd)?.split(',')[0]?.trim();
+    return (this.o.policy?.trustProxy && first) || req.socket.remoteAddress || 'unknown';
   }
 
   private async authenticate(
@@ -128,6 +154,25 @@ export class Gateway {
     this.byClient.set(slot, conn);
     this.conns.add(conn);
 
+    // Messages can arrive before the connection slot is reserved, so processing waits on this chain.
+    conn.chain = (async () => {
+      try {
+        await this.o.policy?.acquire?.(claims.tenantId);
+        conn.admitted = true;
+      } catch (e) {
+        conn.rejected = true;
+        const err = SyncraError.from(e);
+        ws.close(
+          err.code === 'QUOTA_EXCEEDED' ? CLOSE_CODES.QUOTA_EXCEEDED : CLOSE_CODES.FORBIDDEN,
+          err.message.slice(0, 100),
+        );
+      }
+    })();
+    const untilExpiry = Math.min(Math.max(claims.exp * 1000 - Date.now(), 0), 2 ** 31 - 1);
+    conn.expiryTimer = setTimeout(() => {
+      ws.close(CLOSE_CODES.TOKEN_EXPIRED, 'token expired');
+    }, untilExpiry);
+
     ws.on('pong', () => {
       conn.lastSeen = Date.now();
     });
@@ -137,11 +182,28 @@ export class Gateway {
         ws.close(1003, 'binary only');
         return;
       }
+      const verdict = this.o.policy?.message?.(conn.id);
+      if (verdict && !verdict.allowed) {
+        if (Date.now() - conn.lastRateError > 1000) {
+          conn.lastRateError = Date.now();
+          this.sendError(
+            conn,
+            '',
+            new SyncraError('RATE_LIMITED', 'Too many messages', {
+              scope: 'connection',
+              retryAfterMs: verdict.retryAfterMs,
+            }),
+          );
+        }
+        return; // dropped; the client backs off using retryAfterMs
+      }
       const frame = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
       conn.chain = conn.chain.then(() => this.handleFrame(conn, frame));
     });
     ws.on('close', () => {
       this.conns.delete(conn);
+      clearTimeout(conn.expiryTimer);
+      if (conn.admitted) this.o.policy?.release?.(claims.tenantId);
       if (this.byClient.get(slot) === conn) this.byClient.delete(slot);
       for (const s of conn.subs.values()) this.o.svc.unsubscribe(s.hot, conn);
       conn.subs.clear();
@@ -152,6 +214,7 @@ export class Gateway {
   }
 
   private async handleFrame(conn: Connection, frame: Uint8Array): Promise<void> {
+    if (conn.rejected) return;
     let msg: Message;
     try {
       msg = decodeMessage(frame);
@@ -276,7 +339,7 @@ export class Gateway {
         docKey,
         code: err.code,
         message: err.message,
-        retryAfterMs: 0,
+        retryAfterMs: typeof err.details?.retryAfterMs === 'number' ? err.details.retryAfterMs : 0,
       }),
     );
   }
@@ -304,9 +367,15 @@ function parseDocKey(docKey: string): [string, string] {
   return [collection, docId];
 }
 
+const REASONS: Record<number, string> = {
+  400: 'Bad Request',
+  401: 'Unauthorized',
+  429: 'Too Many Requests',
+};
+
 function reject(socket: Duplex, status: number): void {
   socket.write(
-    `HTTP/1.1 ${String(status)} ${status === 400 ? 'Bad Request' : 'Unauthorized'}\r\nConnection: close\r\n\r\n`,
+    `HTTP/1.1 ${String(status)} ${REASONS[status] ?? 'Error'}\r\nConnection: close\r\n\r\n`,
   );
   socket.destroy();
 }

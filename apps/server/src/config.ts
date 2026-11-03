@@ -7,7 +7,7 @@ const int = (def: number) => z.coerce.number().int().positive().default(def);
 
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  PORT: int(8080),
+  PORT: z.coerce.number().int().min(0).max(65535).default(8080),
   NODE_ID: z.string().min(1).default(hostname()),
   PUBLIC_URL: z.string().url().default('http://localhost:8080'),
   CORS_ORIGINS: z.string().default('http://localhost:5173'),
@@ -19,9 +19,13 @@ const schema = z.object({
     .string()
     .refine((v) => Buffer.from(v, 'base64').length === 32, 'must be 32 bytes, base64'),
   METRICS_TOKEN: z.string().default(''),
-  LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+  LOG_LEVEL: z.enum(['silent', 'fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.string().default(''),
   DEMO_MODE: bool.default('false'),
+  TRUST_PROXY: bool.default('false'),
+  WEBHOOK_ALLOW_PRIVATE: bool.default('false'),
+  QUOTA_CACHE_MS: int(10_000),
+  RL_EXPECTED_NODES: int(1),
   BILLING_ENABLED: bool.default('false'),
   DEFAULT_PLAN: z.enum(['free', 'pro', 'business', 'selfhost']).default('selfhost'),
   BATCH_WINDOW_MS: int(20),

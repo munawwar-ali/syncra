@@ -1,24 +1,43 @@
 /** Fastify app factory: request IDs, error mapping, /healthz, /readyz, /metrics. */
 import Fastify, { type FastifyBaseLogger, type FastifyInstance } from 'fastify';
 import helmet from '@fastify/helmet';
+import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import { randomUUID } from 'node:crypto';
 import { SyncraError } from '@syncra/shared';
 import type { Config } from './config.js';
 import { checkReady, type Deps } from './health.js';
+import { registerV1 } from './http/index.js';
 import { httpDuration, registry } from './observability/metrics.js';
+import type { Services } from './services.js';
+
+declare module 'fastify' {
+  interface FastifyInstance {
+    /** "METHOD /path" for every registered route; the isolation test fails when one is not covered. */
+    routeTable: string[];
+  }
+}
 
 export async function buildApp(
   cfg: Config,
   deps: Deps,
   logger: FastifyBaseLogger,
+  services?: Services,
 ): Promise<FastifyInstance> {
   const app = Fastify({
     loggerInstance: logger,
     bodyLimit: 1_048_576,
+    trustProxy: cfg.TRUST_PROXY,
     genReqId: (req) => (req.headers['x-request-id'] as string | undefined) ?? `req_${randomUUID()}`,
   });
+  const routeTable: string[] = [];
+  app.decorate('routeTable', routeTable);
+  app.addHook('onRoute', (r) => {
+    for (const m of [r.method].flat())
+      if (m !== 'HEAD' && m !== 'OPTIONS') routeTable.push(`${m} ${r.url}`);
+  });
   await app.register(helmet);
+  await app.register(cookie);
   await app.register(cors, { origin: cfg.CORS_ORIGINS.split(','), credentials: true });
 
   app.addHook('onResponse', (req, reply, done) => {
@@ -31,8 +50,14 @@ export async function buildApp(
   app.setErrorHandler((err, req, reply) => {
     const e = toSyncraError(err);
     if (e.code === 'INTERNAL') req.log.error({ err }, 'unhandled error');
+    const retryAfterMs = e.details?.retryAfterMs;
+    if (e.code === 'RATE_LIMITED' && typeof retryAfterMs === 'number') {
+      void reply.header('retry-after', Math.max(1, Math.ceil(retryAfterMs / 1000)));
+    }
     void reply.status(e.httpStatus).send(e.toBody(req.id));
   });
+
+  if (services) await registerV1(app, services);
 
   app.get('/healthz', () => ({ status: 'ok' }));
 
