@@ -30,6 +30,8 @@ export interface EngineOptions {
   network: NetworkMonitor;
   nextOpId(): string;
   random?: () => number;
+  /** How long to wait in quota-blocked before probing again (default 60 s). */
+  quotaRetryMs?: number;
   onState(s: ConnectionState): void;
   onPending(count: number, lastSyncedAt: number | null): void;
   onError(e: SyncraErrorInfo): void;
@@ -149,7 +151,7 @@ export class SyncEngine {
         break;
       case 'quota-blocked':
         this.closeSocket();
-        this.schedule(QUOTA_RETRY_MS);
+        this.schedule(this.o.quotaRetryMs ?? QUOTA_RETRY_MS);
         break;
       case 'authenticating':
         if (ev.type === 'SOCKET_CLOSE') {

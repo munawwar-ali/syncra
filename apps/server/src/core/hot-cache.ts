@@ -54,6 +54,13 @@ export class HotCache<V> {
     this.evictOverCapacity(k);
   }
 
+  /** Removes an entry regardless of subscribers (soft-deleted documents). */
+  delete(tenantId: string, docKey: string): void {
+    const k = HotCache.key(tenantId, docKey);
+    const e = this.entries.get(k);
+    if (e) this.evict(k, e);
+  }
+
   /** Marks the document as having one more local subscriber. */
   acquire(tenantId: string, docKey: string): void {
     const e = this.entries.get(HotCache.key(tenantId, docKey));

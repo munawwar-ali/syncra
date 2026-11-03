@@ -7,7 +7,7 @@ import { SignJWT } from 'jose';
 import { inject } from 'vitest';
 import pino from 'pino';
 import { decodeMessage, encodeMessage, type Message } from '@syncra/protocol';
-import { createSharedSecretVerifier } from '../src/auth/jwt.js';
+import { createClientTokenVerifier } from '../src/auth/jwt.js';
 import type { AccessRule } from '../src/auth/access.js';
 import { DocService, type DocServiceOptions } from '../src/core/doc-service.js';
 import { ShardRing } from '../src/shards/ring.js';
@@ -47,7 +47,9 @@ export async function startServer(
   });
   const gateway = new Gateway({
     svc,
-    verify: createSharedSecretVerifier(SECRET),
+    verify: createClientTokenVerifier(() =>
+      Promise.resolve({ secret: new TextEncoder().encode(SECRET), active: true }),
+    ),
     logger: pino({ level: 'silent' }),
     maxMessageBytes: 2_097_152,
   });
@@ -76,8 +78,9 @@ export function mintToken(
   expiresIn = '1h',
 ): Promise<string> {
   return new SignJWT({ tid: tenantId, access })
-    .setProtectedHeader({ alg: 'HS256' })
+    .setProtectedHeader({ alg: 'HS256', kid: tenantId })
     .setSubject('user-1')
+    .setIssuedAt()
     .setExpirationTime(expiresIn)
     .sign(new TextEncoder().encode(SECRET));
 }

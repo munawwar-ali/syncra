@@ -11,6 +11,7 @@ import { join } from 'node:path';
 import type { Redis } from 'ioredis';
 import pg from 'pg';
 import { loadConfig } from '../apps/server/src/config.js';
+import { seedDemoTenant } from '../apps/server/src/control/seed.js';
 import { migrateAll } from '../apps/server/src/db/migrate.js';
 import { createDeps } from '../apps/server/src/health.js';
 import { startNode } from '../apps/server/src/server.js';
@@ -61,6 +62,12 @@ await migrateAll(cfg.CONTROL_DATABASE_URL, cfg.SHARD_DATABASE_URLS);
 const deps = createDeps(cfg);
 await deps.redis.quit().catch(() => undefined);
 deps.redis = new RedisMock() as unknown as Redis;
+const seeded = await seedDemoTenant(deps.control, Buffer.from(cfg.ENCRYPTION_KEY, 'base64'));
+if (seeded.created) {
+  console.log(`[local-stack] demo login: ${seeded.email} / ${seeded.password ?? ''}`);
+  console.log(`[local-stack] secret key: ${seeded.keys?.secret ?? ''}`);
+  console.log(`[local-stack] publishable key: ${seeded.keys?.publishable ?? ''}`);
+}
 const node = await startNode(cfg, { deps });
 console.log(
   `[local-stack] sync node on http://localhost:${String(node.port)} (demo mode, embedded Postgres)`,

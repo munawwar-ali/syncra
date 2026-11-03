@@ -32,6 +32,19 @@ export default tseslint.config(
     rules: { '@typescript-eslint/no-unnecessary-condition': 'off' },
   },
   {
+    // Integration tests read untyped JSON response bodies.
+    files: ['apps/server/test/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/restrict-template-expressions': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
+  {
     // ioredis-mock ships no resolvable types under NodeNext.
     files: ['scripts/**/*.ts'],
     rules: {
@@ -41,7 +54,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['**/*.config.ts', '**/*.config.js', '**/global-setup.ts'],
+    files: ['**/*.config.ts', '**/*.config.js', '**/global-setup.ts', '**/*.d.ts'],
     rules: { 'import/no-default-export': 'off' },
   },
 );

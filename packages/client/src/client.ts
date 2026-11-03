@@ -36,6 +36,8 @@ export interface ClientOptions {
   identity?: { tenantId: string; userId: string };
   /** URL probed with HEAD to confirm connectivity after a failed connect. */
   probeUrl?: string;
+  /** Advanced: how long to stay quota-blocked before retrying (default 60 s). */
+  quotaRetryMs?: number;
   // Advanced / testing hooks.
   transport?: Transport;
   /** Pass `null` to disable multi-tab coordination (this tab is always the leader). */
@@ -168,6 +170,7 @@ class ClientImpl implements SyncraClient {
       transport: this.o.transport ?? webSocketTransport,
       network: this.network,
       nextOpId: () => this.nextOpId(),
+      quotaRetryMs: this.o.quotaRetryMs,
       onState: (connection: ConnectionState) => {
         if (connection === 'live') this.rememberIdentity();
         this.setStatus({ connection, error: connection === 'live' ? null : this._status.error });
