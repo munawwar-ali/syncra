@@ -414,7 +414,12 @@ export class SyncEngine {
   // --- outbox ---------------------------------------------------------------------------
 
   async refreshPending(): Promise<void> {
-    const n = await this.o.store.outboxCount();
+    let n: number;
+    try {
+      n = await this.o.store.outboxCount();
+    } catch {
+      return; // store closed while a late socket message was in flight; nothing to report
+    }
     if (n === 0 && this.state === 'live') this.lastSyncedAt = Date.now();
     this.o.onPending(n, this.lastSyncedAt);
   }
@@ -430,6 +435,9 @@ export class SyncEngine {
         this.drainAgain = false;
         await this.drainOnce();
       } while (this.drainAgain);
+    } catch (err) {
+      // The store can close under an in-flight drain once the client was disconnected; that is expected.
+      if (this.wanted) throw err;
     } finally {
       this.draining = false;
     }

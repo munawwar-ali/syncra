@@ -1,0 +1,486 @@
+{
+  "uid": "syncra-overview",
+  "title": "Syncra overview",
+  "tags": ["syncra"],
+  "timezone": "utc",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5s",
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "WebSocket connections",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "syncra-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (node) (syncra_ws_connections)",
+          "legendFormat": "{{node}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "syncra-prometheus"
+          }
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Operations received per second",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "syncra-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(syncra_ops_received_total[1m]))",
+          "legendFormat": "accepted",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "syncra-prometheus"
+          }
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(syncra_ops_committed_total[1m]))",
+          "legendFormat": "committed (batched)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "syncra-prometheus"
+          }
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Ack latency",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "syncra-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(syncra_ack_latency_seconds_bucket[1m])))",
+          "legendFormat": "p50",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "syncra-prometheus"
+          }
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(syncra_ack_latency_seconds_bucket[1m])))",
+          "legendFormat": "p95",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "syncra-prometheus"
+          }
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(syncra_ack_latency_seconds_bucket[1m])))",
+          "legendFormat": "p99",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "syncra-prometheus"
+          }
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Cross-node fan-out lag",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "syncra-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(syncra_fanout_lag_seconds_bucket[1m])))",
+          "legendFormat": "p50",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "syncra-prometheus"
+          }
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(syncra_fanout_lag_seconds_bucket[1m])))",
+          "legendFormat": "p95",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "syncra-prometheus"
+          }
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Hot documents per node",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "syncra-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (node) (syncra_hot_docs)",
+          "legendFormat": "{{node}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "syncra-prometheus"
+          }
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Job backlog",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "syncra-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (queue) (syncra_queue_depth)",
+          "legendFormat": "{{queue}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "syncra-prometheus"
+          }
+        },
+        {
+          "refId": "B",
+          "expr": "max(syncra_ops_since_snapshot_max)",
+          "legendFormat": "max ops since snapshot",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "syncra-prometheus"
+          }
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Compaction savings",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "syncra-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 24
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(syncra_compaction_bytes_reclaimed_total[5m]))",
+          "legendFormat": "bytes reclaimed / s",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "syncra-prometheus"
+          }
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(syncra_compaction_rows_deleted_total[5m]))",
+          "legendFormat": "rows deleted / s",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "syncra-prometheus"
+          }
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Rate limits and quota blocks",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "syncra-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 24
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (scope) (rate(syncra_rate_limited_total[1m]))",
+          "legendFormat": "rate limited: {{scope}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "syncra-prometheus"
+          }
+        },
+        {
+          "refId": "B",
+          "expr": "sum by (metric) (rate(syncra_quota_blocked_total[1m]))",
+          "legendFormat": "quota blocked: {{metric}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "syncra-prometheus"
+          }
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Gap recoveries and backpressure",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "syncra-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 32
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(syncra_gap_recoveries_total[1m]))",
+          "legendFormat": "gap recoveries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "syncra-prometheus"
+          }
+        },
+        {
+          "refId": "B",
+          "expr": "sum by (action) (rate(syncra_backpressure_events_total[1m]))",
+          "legendFormat": "backpressure: {{action}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "syncra-prometheus"
+          }
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Postgres",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "syncra-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 32
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max by (shard) (syncra_pg_pool_waiting)",
+          "legendFormat": "pool waiting: shard {{shard}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "syncra-prometheus"
+          }
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(syncra_op_commit_duration_seconds_bucket[1m])))",
+          "legendFormat": "commit p95 (s)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "syncra-prometheus"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -83,6 +83,8 @@ export interface DocBroadcast {
   originNode: string;
   originClient: string;
   update: Uint8Array;
+  /** Commit time on the origin node (ms since epoch), appended after the documented fields; absent in older messages. */
+  sentAt?: number;
 }
 
 /** `varUint seq, varString originNode, varString originClient, varUint8Array update` (Doc 03 §3). */
@@ -92,18 +94,21 @@ export function encodeDocBroadcast(m: DocBroadcast): Uint8Array {
   encoding.writeVarString(e, m.originNode);
   encoding.writeVarString(e, m.originClient);
   encoding.writeVarUint8Array(e, m.update);
+  encoding.writeVarUint(e, m.sentAt ?? Date.now());
   return encoding.toUint8Array(e);
 }
 
 export function decodeDocBroadcast(buf: Uint8Array): DocBroadcast | null {
   try {
     const d = decoding.createDecoder(buf);
-    return {
+    const m: DocBroadcast = {
       seq: decoding.readVarUint(d),
       originNode: decoding.readVarString(d),
       originClient: decoding.readVarString(d),
       update: decoding.readVarUint8Array(d),
     };
+    if (decoding.hasContent(d)) m.sentAt = decoding.readVarUint(d);
+    return m;
   } catch {
     return null; // a malformed message from the bus is dropped; reconciliation repairs any gap
   }

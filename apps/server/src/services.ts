@@ -11,7 +11,14 @@ import { DocService } from './core/doc-service.js';
 import { Monitor } from './core/monitor.js';
 import { Presence } from './core/presence.js';
 import { RedisPubSub, type PubSub } from './core/pubsub.js';
-import { gapRecoveries, opsReceived } from './observability/metrics.js';
+import {
+  commitDuration,
+  fanoutLag,
+  gapRecoveries,
+  opsCommitted,
+  opsReceived,
+  registerPoolGauge,
+} from './observability/metrics.js';
 import type { Config } from './config.js';
 import type { Deps } from './health.js';
 import { QuotaService } from './limits/quota.js';
@@ -127,6 +134,13 @@ export function createServices(cfg: Config, deps: Deps, logger: Logger): Service
     batchMaxBytes: cfg.BATCH_MAX_BYTES,
     maxUpdateBytes: cfg.MAX_UPDATE_BYTES,
     hooks: {
+      batchCommitted: ({ shard, ms }) => {
+        opsCommitted.labels(String(shard)).inc();
+        commitDuration.labels(String(shard)).observe(ms / 1000);
+      },
+      fanoutLag: (ms) => {
+        fanoutLag.labels(cfg.NODE_ID).observe(ms / 1000);
+      },
       gapRecovered: () => {
         gapRecoveries.labels(cfg.NODE_ID).inc();
       },
@@ -175,6 +189,9 @@ export function createServices(cfg: Config, deps: Deps, logger: Logger): Service
     },
   });
 
+  registerPoolGauge(() =>
+    deps.shards.map((p, i) => ({ shard: String(i), waiting: p.waitingCount })),
+  );
   monitor.start();
   const lastUsed = setInterval(() => {
     apiKeys.flushLastUsed().catch(onErr('last_used flush failed'));

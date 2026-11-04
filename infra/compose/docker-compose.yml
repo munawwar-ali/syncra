@@ -97,12 +97,61 @@ services:
       redis: { condition: service_healthy }
 
   nginx:
-    image: nginx:1.27-alpine
+    build: { context: ../.., dockerfile: infra/docker/Dockerfile.web }
     ports: ['8080:80']
-    volumes:
-      - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       server: { condition: service_healthy }
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    # Prometheus does not expand env vars in its config, so the scrape password is written to a file first.
+    entrypoint:
+      [
+        '/bin/sh',
+        '-c',
+        'printf %s "$$METRICS_TOKEN" > /tmp/metrics_token && exec /bin/prometheus --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.retention.time=7d',
+      ]
+    environment:
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
+    volumes:
+      - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+    ports: ['9090:9090']
+    depends_on: [server]
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      # Development convenience: a read-only anonymous viewer so the dashboard opens with no login.
+      GF_AUTH_ANONYMOUS_ENABLED: 'true'
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/syncra.json
+    volumes:
+      - ../grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports: ['3000:3000']
+    depends_on: [prometheus]
+
+  # Network chaos: docker compose --profile chaos up. Clients connect to :8666, which forwards to nginx.
+  toxiproxy:
+    image: ghcr.io/shopify/toxiproxy:2.9.0
+    profiles: [chaos]
+    ports: ['8474:8474', '8666:8666']
+    depends_on: [nginx]
+
+  # Load generator: docker compose --profile loadtest run --rm k6 run /scripts/ws-steady.js
+  k6:
+    image: grafana/k6:0.54.0
+    profiles: [loadtest]
+    entrypoint: ['k6']
+    environment:
+      SYNCRA_URL: ${SYNCRA_URL:-http://nginx}
+      SYNCRA_SECRET_KEY: ${SYNCRA_SECRET_KEY:-}
+    volumes:
+      - ../../loadtest/k6:/scripts:ro
+      - ../../loadtest/results:/results
+    depends_on: [nginx]
 
 volumes:
   pgdata-control:

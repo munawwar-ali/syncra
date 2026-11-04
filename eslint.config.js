@@ -11,6 +11,8 @@ export default tseslint.config(
       'eslint.config.js',
       '**/postcss.config.js',
       '**/tailwind.config.js',
+      // k6 scripts run in k6's own runtime (not Node, not in any tsconfig); syntax-checked with `node --check`.
+      'loadtest/k6/**/*.js',
     ],
   },
   js.configs.recommended,
@@ -51,6 +53,29 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
       '@typescript-eslint/no-unnecessary-type-assertion': 'off',
+    },
+  },
+  {
+    // React handlers like onClick={() => setOpen(false)} are idiomatic; axe's impact is a string union.
+    files: ['apps/dashboard/**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-confusing-void-expression': 'off',
+      '@typescript-eslint/no-unnecessary-type-parameters': 'off',
+      '@typescript-eslint/no-unnecessary-condition': 'off',
+      '@typescript-eslint/restrict-template-expressions': 'off',
+    },
+  },
+  {
+    // Benchmark tooling: pragmatic style, results are checked by the runs themselves.
+    files: ['loadtest/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-confusing-void-expression': 'off',
+      '@typescript-eslint/no-unnecessary-condition': 'off',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'off',
+      '@typescript-eslint/no-meaningless-void-operator': 'off',
+      '@typescript-eslint/no-misused-spread': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
     },
   },
   {

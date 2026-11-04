@@ -26,6 +26,7 @@ import type { ClientClaims, TokenVerifier } from '../auth/jwt.js';
 import type { DocService, HotDoc, Subscriber } from '../core/doc-service.js';
 import { encodeAwareness, parseAwareness, type Presence } from '../core/presence.js';
 import { InProcessLimiter } from '../limits/token-bucket.js';
+import { countLimitError } from '../observability/metrics.js';
 import { Outbound, type BackpressureEvent } from './outbound.js';
 
 /** Hooks that bring rate limits, quotas and metering into the gateway; all optional. */
@@ -418,6 +419,7 @@ export class Gateway {
 
   private sendError(conn: Connection, docKey: string, e: unknown): void {
     const err = SyncraError.from(e);
+    countLimitError(err);
     if (err.code === 'INTERNAL')
       this.o.logger.error({ err: e, connId: conn.id }, 'ws handler failed');
     conn.send(

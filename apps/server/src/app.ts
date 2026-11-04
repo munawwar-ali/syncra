@@ -8,7 +8,7 @@ import { SyncraError } from '@syncra/shared';
 import type { Config } from './config.js';
 import { checkReady, type Deps } from './health.js';
 import { registerV1 } from './http/index.js';
-import { httpDuration, registry } from './observability/metrics.js';
+import { countLimitError, httpDuration, registry } from './observability/metrics.js';
 import type { Services } from './services.js';
 
 declare module 'fastify' {
@@ -50,6 +50,7 @@ export async function buildApp(
   app.setErrorHandler((err, req, reply) => {
     const e = toSyncraError(err);
     if (e.code === 'INTERNAL') req.log.error({ err }, 'unhandled error');
+    countLimitError(e);
     const retryAfterMs = e.details?.retryAfterMs;
     if (e.code === 'RATE_LIMITED' && typeof retryAfterMs === 'number') {
       void reply.header('retry-after', Math.max(1, Math.ceil(retryAfterMs / 1000)));

@@ -7,7 +7,7 @@ import http from 'node:http';
 import { Redis } from 'ioredis';
 import pg from 'pg';
 import { pino } from 'pino';
-import { Counter, Registry, collectDefaultMetrics } from 'prom-client';
+import { Counter, Gauge, Registry, collectDefaultMetrics } from 'prom-client';
 import {
   WebhookDispatcher,
   effectivePlan,
@@ -92,6 +92,35 @@ function schedule(name: string, everyMs: number, fn: () => Promise<unknown>): No
   void tick();
   return setInterval(() => void tick(), everyMs);
 }
+
+// Backlog gauges for the alert rules (Doc 02 §14.2). Webhook deliveries are the only job queue stored
+// as rows, so their backlog is the `syncra_queue_depth{queue="webhooks"}` value.
+new Gauge({
+  name: 'syncra_queue_depth',
+  help: 'Jobs waiting to run',
+  labelNames: ['queue'] as const,
+  registers: [registry],
+  async collect() {
+    const { rows } = await control.query<{ n: string }>(
+      "select count(*)::text n from webhook_deliveries where status in ('pending','retrying')",
+    );
+    this.set({ queue: 'webhooks' }, Number(rows[0]?.n ?? 0));
+  },
+});
+new Gauge({
+  name: 'syncra_ops_since_snapshot_max',
+  help: 'Largest number of ops after the latest snapshot of any document',
+  labelNames: ['shard'] as const,
+  registers: [registry],
+  async collect() {
+    for (const [i, shard] of shards.entries()) {
+      const { rows } = await shard.query<{ n: string | null }>(
+        'select max(head_seq - snapshot_seq)::text n from documents where deleted_at is null',
+      );
+      this.set({ shard: String(i) }, Number(rows[0]?.n ?? 0));
+    }
+  },
+});
 
 const timers = [
   schedule('webhook:deliver', 2_000, () => dispatcher.runDue()),
