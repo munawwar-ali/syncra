@@ -10,7 +10,8 @@
     "test": "vitest run --passWithNoTests",
     "test:integration": "vitest run --config vitest.integration.config.ts --passWithNoTests",
     "db:migrate": "tsx src/db/migrate-cli.ts",
-    "start": "node dist/main.js"
+    "start": "node dist/main.js",
+    "gen:openapi": "tsx src/http/gen-openapi.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.5",
@@ -30,9 +31,11 @@
     "uuid": "^10.0.0",
     "ws": "^8.22.0",
     "yjs": "^13.6.33",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {
+    "@apidevtools/swagger-parser": "^10.1.1",
     "@syncra/client": "workspace:*",
     "@types/node": "^22.7.0",
     "@types/pg": "^8.11.0",
@@ -40,7 +43,8 @@
     "@types/ws": "^8.18.2",
     "embedded-postgres": "16.14.0-beta.17",
     "tsx": "^4.19.0",
-    "y-protocols": "^1.0.7"
+    "y-protocols": "^1.0.7",
+    "yaml": "^2.9.1"
   },
   "exports": {
     "./jobs": {

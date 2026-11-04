@@ -8,15 +8,10 @@ import { requireCan } from '../control/roles.js';
 import { mintClientToken, mintRequestSchema } from '../control/signing.js';
 import type { Services } from '../services.js';
 import { endpointInput, endpointPatch } from '../webhooks/service.js';
+import * as S from './schemas.js';
 import { authDashboard, authSecret, authSecretOrDashboard, bearer, parse } from './auth.js';
 
 const REFRESH_COOKIE = 'syncra_refresh';
-const email = z
-  .string()
-  .email()
-  .max(254)
-  .transform((e) => e.toLowerCase());
-const password = z.string().min(10).max(200);
 
 export function registerControlRoutes(app: FastifyInstance, s: Services): void {
   const setRefresh = (reply: FastifyReply, token: string): void => {
@@ -55,15 +50,7 @@ export function registerControlRoutes(app: FastifyInstance, s: Services): void {
   // ---- accounts -------------------------------------------------------------------------
   app.post('/auth/signup', async (req, reply) => {
     await authLimit(req.ip);
-    const b = parse(
-      z.object({
-        email,
-        password,
-        name: z.string().min(1).max(100),
-        tenantName: z.string().min(1).max(100),
-      }),
-      req.body,
-    );
+    const b = parse(S.signupBody, req.body);
     const r = await s.accounts.signup(b);
     setRefresh(reply, r.refreshToken);
     return reply
@@ -73,7 +60,7 @@ export function registerControlRoutes(app: FastifyInstance, s: Services): void {
 
   app.post('/auth/login', async (req, reply) => {
     await authLimit(req.ip);
-    const b = parse(z.object({ email, password: z.string().min(1).max(200) }), req.body);
+    const b = parse(S.loginBody, req.body);
     const r = await s.accounts.login(b.email, b.password);
     setRefresh(reply, r.refreshToken);
     return { accessToken: r.accessToken, user: r.user, memberships: r.memberships };
@@ -97,14 +84,7 @@ export function registerControlRoutes(app: FastifyInstance, s: Services): void {
 
   app.post('/auth/accept-invite', async (req, reply) => {
     await authLimit(req.ip);
-    const b = parse(
-      z.object({
-        token: z.string().min(10).max(200),
-        password: password.optional(),
-        name: z.string().min(1).max(100).optional(),
-      }),
-      req.body,
-    );
+    const b = parse(S.acceptInviteBody, req.body);
     const { userId } = await s.tenants.acceptInvite(b.token, b);
     const session = await s.accounts.startSession(userId);
     setRefresh(reply, session.refreshToken);
@@ -132,13 +112,7 @@ export function registerControlRoutes(app: FastifyInstance, s: Services): void {
 
   app.patch('/tenant', async (req) => {
     const p = await authDashboard(s, req);
-    const b = parse(
-      z.object({
-        name: z.string().min(1).max(100).optional(),
-        plan: z.enum(['free', 'pro', 'business', 'selfhost']).optional(),
-      }),
-      req.body,
-    );
+    const b = parse(S.tenantPatchBody, req.body);
     if (b.name) await s.tenants.rename(p.tenantId, p, b.name);
     if (b.plan) await s.tenants.changePlan(p.tenantId, p, b.plan);
     return { tenant: await s.accounts.getTenant(p.tenantId) };
@@ -157,14 +131,14 @@ export function registerControlRoutes(app: FastifyInstance, s: Services): void {
 
   app.post('/tenant/invitations', async (req, reply) => {
     const p = await authDashboard(s, req);
-    const b = parse(z.object({ email, role: z.enum(['admin', 'developer', 'viewer']) }), req.body);
+    const b = parse(S.inviteBody, req.body);
     return reply.status(201).send(await s.tenants.invite(p.tenantId, p, b.email, b.role));
   });
 
   app.patch('/tenant/members/:userId', async (req) => {
     const p = await authDashboard(s, req);
     const { userId } = parse(z.object({ userId: z.string().uuid() }), req.params);
-    const b = parse(z.object({ role: z.enum(['admin', 'developer', 'viewer']) }), req.body);
+    const b = parse(S.memberRoleBody, req.body);
     await s.tenants.changeRole(p.tenantId, p, userId, b.role);
     return { ok: true };
   });
@@ -184,10 +158,7 @@ export function registerControlRoutes(app: FastifyInstance, s: Services): void {
 
   app.post('/keys', async (req, reply) => {
     const p = await authDashboard(s, req);
-    const b = parse(
-      z.object({ kind: z.enum(['secret', 'publishable']), name: z.string().min(1).max(100) }),
-      req.body,
-    );
+    const b = parse(S.createKeyBody, req.body);
     const r = await s.apiKeys.create(p.tenantId, p, b);
     return reply.status(201).send({ ...r.dto, key: r.key });
   });
@@ -209,7 +180,7 @@ export function registerControlRoutes(app: FastifyInstance, s: Services): void {
   app.post('/tokens/playground', async (req) => {
     const p = await authDashboard(s, req);
     requireCan(p.role, 'docs.write');
-    const { userId } = parse(z.object({ userId: z.string().min(1).max(100) }), req.body);
+    const { userId } = parse(S.playgroundTokenBody, req.body);
     return mintClientToken(s.tenantKeys, p.tenantId, {
       userId: `playground-${userId}`,
       ttlSeconds: 3600,
@@ -241,17 +212,7 @@ export function registerControlRoutes(app: FastifyInstance, s: Services): void {
 
   app.get('/usage', async (req) => {
     const p = await authDashboard(s, req);
-    const q = parse(
-      z.object({
-        from: z.coerce.date().optional(),
-        to: z.coerce.date().optional(),
-        metric: z
-          .enum(['ops', 'bytes_written', 'connections_peak', 'docs_created', 'docs_active'])
-          .default('ops'),
-        granularity: z.enum(['hour', 'day']).default('hour'),
-      }),
-      req.query,
-    );
+    const q = parse(S.usageQuery, req.query);
     const to = q.to ?? new Date();
     const from = q.from ?? new Date(to.getTime() - 24 * 3600 * 1000);
     const { rows } = await s.deps.control.query<{ at: Date; value: string }>(

@@ -1,5 +1,6 @@
 /** Prometheus registry and HTTP latency histogram (Doc 02 §14.1). */
 import { Counter, Gauge, Histogram, Registry, collectDefaultMetrics } from 'prom-client';
+import type { SyncraError } from '@syncra/shared';
 
 export const registry = new Registry();
 collectDefaultMetrics({ register: registry });
@@ -16,6 +17,29 @@ export const ackLatency = new Histogram({
   help: 'Time from receiving an update to acknowledging its durable commit',
   labelNames: ['node'] as const,
   buckets: [0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5],
+  registers: [registry],
+});
+
+export const fanoutLag = new Histogram({
+  name: 'syncra_fanout_lag_seconds',
+  help: 'Delay between an update committing on its origin node and being applied on this node',
+  labelNames: ['node'] as const,
+  buckets: [0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5],
+  registers: [registry],
+});
+
+export const opsCommitted = new Counter({
+  name: 'syncra_ops_committed_total',
+  help: 'Op rows committed to a shard (after batching)',
+  labelNames: ['shard'] as const,
+  registers: [registry],
+});
+
+export const commitDuration = new Histogram({
+  name: 'syncra_op_commit_duration_seconds',
+  help: 'Shard transaction time for one batched write',
+  labelNames: ['shard'] as const,
+  buckets: [0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1],
   registers: [registry],
 });
 
@@ -87,4 +111,35 @@ export function registerGauges(
       this.set({ node: sourceNode }, source?.().hotDocs ?? 0);
     },
   });
+}
+
+let poolSource: (() => { shard: string; waiting: number }[]) | undefined;
+let poolRegistered = false;
+
+/** Postgres pool pressure per shard (syncra_pg_pool_waiting); idempotent like registerGauges. */
+export function registerPoolGauge(read: () => { shard: string; waiting: number }[]): void {
+  poolSource = read;
+  if (poolRegistered) return;
+  poolRegistered = true;
+  new Gauge({
+    name: 'syncra_pg_pool_waiting',
+    help: 'Queries waiting for a free Postgres connection',
+    labelNames: ['shard'] as const,
+    registers: [registry],
+    collect() {
+      this.reset();
+      for (const p of poolSource?.() ?? []) this.set({ shard: p.shard }, p.waiting);
+    },
+  });
+}
+
+/** Counts the limit-related errors we hand back to clients (REST and WebSocket share this). */
+export function countLimitError(err: SyncraError): void {
+  if (err.code === 'RATE_LIMITED') {
+    const scope = err.details?.scope;
+    rateLimited.labels(typeof scope === 'string' ? scope : 'unknown').inc();
+  } else if (err.code === 'QUOTA_EXCEEDED') {
+    const metric = err.details?.metric;
+    quotaBlocked.labels(typeof metric === 'string' ? metric : 'unknown').inc();
+  }
 }

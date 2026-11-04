@@ -4,11 +4,12 @@ import { randomUUID } from 'node:crypto';
 import { v7 as uuidv7 } from 'uuid';
 import * as Y from 'yjs';
 import { z } from 'zod';
-import { COLLECTION_REGEX, DOC_ID_REGEX, SyncraError, paginationSchema } from '@syncra/shared';
+import { COLLECTION_REGEX, DOC_ID_REGEX, SyncraError } from '@syncra/shared';
 import { resolveAccess } from '../auth/access.js';
 import { docToJson, getDocMeta, listCollections, listDocs } from '../core/doc-queries.js';
 import type { Services } from '../services.js';
 import { authClient, authSecretOrDashboard, parse, requireWrite } from './auth.js';
+import * as S from './schemas.js';
 
 const collection = z
   .string()
@@ -32,13 +33,7 @@ export function registerDataRoutes(app: FastifyInstance, s: Services): void {
   app.get('/collections/:c/docs', async (req) => {
     const p = await authSecretOrDashboard(s, req);
     const { c } = parse(z.object({ c: collection }), req.params);
-    const q = parse(
-      paginationSchema.extend({
-        prefix: z.string().max(128).optional(),
-        updatedSince: z.coerce.date().optional(),
-      }),
-      req.query,
-    );
+    const q = parse(S.listDocsQuery, req.query);
     return listDocs(shards, p.tenantId, c, {
       limit: q.limit,
       cursor: q.cursor,
@@ -51,10 +46,7 @@ export function registerDataRoutes(app: FastifyInstance, s: Services): void {
     const p = await authSecretOrDashboard(s, req);
     requireWrite(p);
     const { c } = parse(z.object({ c: collection }), req.params);
-    const b = parse(
-      z.object({ id: docId.optional(), initial: z.record(z.unknown()).optional() }),
-      req.body ?? {},
-    );
+    const b = parse(S.createDocBody, req.body ?? {});
     const id = b.id ?? uuidv7();
     if (await getDocMeta(shards, s.ring, p.tenantId, c, id))
       throw new SyncraError('CONFLICT', 'Document already exists');

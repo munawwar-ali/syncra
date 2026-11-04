@@ -73,6 +73,10 @@ export interface DocHooks {
   ): void;
   /** A gap was detected and repaired from Postgres. */
   gapRecovered?(): void;
+  /** One batch committed: which shard, how long the transaction took, how many bytes. */
+  batchCommitted?(info: { shard: number; ms: number; bytes: number }): void;
+  /** Delay between the origin node committing an update and this node applying it. */
+  fanoutLag?(ms: number): void;
 }
 
 export interface DocServiceOptions {
@@ -266,6 +270,7 @@ export class DocService {
     if (m.seq <= hot.headSeq) return; // duplicate or already recovered
     if (m.seq === hot.headSeq + 1) {
       this.applyRemote(hot, m.seq, m.originClient, m.update);
+      if (m.sentAt !== undefined) this.opts.hooks?.fanoutLag?.(Math.max(0, Date.now() - m.sentAt));
       return;
     }
     this.opts.hooks?.gapRecovered?.();
@@ -537,8 +542,14 @@ export class DocService {
   ) {
     const hot = this.byUid.get(uid);
     if (!hot) throw new SyncraError('INTERNAL', 'Document evicted during write');
+    const t0 = performance.now();
     const r = await appendOps(hot.shard, hot.tenantId, hot.uid, items);
     if (r.newSeq !== null && r.merged) {
+      this.opts.hooks?.batchCommitted?.({
+        shard: this.opts.shards.indexOf(hot.shard),
+        ms: performance.now() - t0,
+        bytes: r.merged.length,
+      });
       const seq = r.newSeq;
       const origins = new Set(items.map((i) => i.clientId));
       const origin = origins.size === 1 ? ([...origins][0] as string) : 'multi';

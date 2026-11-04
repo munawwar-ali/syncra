@@ -1,0 +1,55 @@
+# Alert rules from Doc 02 section 14.2. Thresholds are the documented defaults.
+groups:
+  - name: syncra
+    rules:
+      - alert: AckLatencyHigh
+        expr: histogram_quantile(0.95, sum by (le) (rate(syncra_ack_latency_seconds_bucket[5m]))) > 0.25
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: Ack latency p95 above 250 ms for 5 minutes
+          description: Writes are slow to become durable. Check Postgres pool pressure and commit duration.
+
+      - alert: ConnectionsDropped
+        expr: sum(syncra_ws_connections) < 0.7 * max_over_time(sum(syncra_ws_connections)[2m:15s])
+        for: 0m
+        labels: { severity: critical }
+        annotations:
+          summary: WebSocket connections fell by more than 30% within 2 minutes
+          description: A node may have crashed or the edge proxy is failing.
+
+      - alert: CompactionVerificationFailed
+        expr: increase(syncra_compaction_verify_failures_total[10m]) > 0
+        labels: { severity: critical }
+        annotations:
+          summary: A compaction was aborted by its safety check
+          description: A snapshot did not contain the ops it was meant to replace. Nothing was deleted; investigate before the next run.
+
+      - alert: QueueBacklog
+        expr: syncra_queue_depth > 10000
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: Job backlog above 10,000 for 10 minutes
+          description: The worker is not keeping up or is down.
+
+      - alert: SnapshotBacklog
+        expr: max(syncra_ops_since_snapshot_max) > 5000
+        labels: { severity: warning }
+        annotations:
+          summary: A document has more than 5,000 ops since its last snapshot
+          description: Snapshots are not being taken. Check that the worker is running.
+
+      - alert: PostgresPoolWaiting
+        expr: max(syncra_pg_pool_waiting) > 20
+        for: 2m
+        labels: { severity: warning }
+        annotations:
+          summary: More than 20 queries waiting for a Postgres connection for 2 minutes
+
+      - alert: GapRecoveriesHigh
+        expr: sum(rate(syncra_gap_recoveries_total[1m])) * 60 > 100
+        labels: { severity: warning }
+        annotations:
+          summary: More than 100 gap recoveries per minute
+          description: Redis pub/sub is dropping messages (Redis instability).

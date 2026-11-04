@@ -81,24 +81,28 @@ const dispatcher = new WebhookDispatcher(deps.control, {
   encryptionKey: Buffer.from(cfg.ENCRYPTION_KEY, 'base64'),
   allowPrivate: cfg.WEBHOOK_ALLOW_PRIVATE,
 });
-const jobs = [
-  setInterval(() => void dispatcher.runDue().catch(() => undefined), 1000),
-  setInterval(() => {
-    void flushUsage(deps.redis, deps.control).catch(() => undefined);
-    void refreshGauges(deps.shards, deps.control).catch(() => undefined);
-  }, 3000),
-  setInterval(() => {
-    for (const shard of deps.shards) {
-      void maintainShard(shard, deps.redis, {
-        everyOps: cfg.SNAPSHOT_EVERY_OPS,
-        everyBytes: cfg.SNAPSHOT_EVERY_BYTES,
-        idleMs: cfg.SNAPSHOT_IDLE_MS,
-        checkpointMs: cfg.CHECKPOINT_INTERVAL_MS,
-        retentionDays: () => Promise.resolve(30),
-      }).catch(() => undefined);
-    }
-  }, 2000),
-];
+// LOCAL_JOBS=false leaves the node alone (benchmarks: background jobs would add noise).
+const jobs =
+  process.env.LOCAL_JOBS === 'false'
+    ? []
+    : [
+        setInterval(() => void dispatcher.runDue().catch(() => undefined), 1000),
+        setInterval(() => {
+          void flushUsage(deps.redis, deps.control).catch(() => undefined);
+          void refreshGauges(deps.shards, deps.control).catch(() => undefined);
+        }, 3000),
+        setInterval(() => {
+          for (const shard of deps.shards) {
+            void maintainShard(shard, deps.redis, {
+              everyOps: cfg.SNAPSHOT_EVERY_OPS,
+              everyBytes: cfg.SNAPSHOT_EVERY_BYTES,
+              idleMs: cfg.SNAPSHOT_IDLE_MS,
+              checkpointMs: cfg.CHECKPOINT_INTERVAL_MS,
+              retentionDays: () => Promise.resolve(30),
+            }).catch(() => undefined);
+          }
+        }, 2000),
+      ];
 
 const shutdown = async (): Promise<void> => {
   jobs.forEach(clearInterval);

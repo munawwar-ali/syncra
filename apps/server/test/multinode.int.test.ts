@@ -298,8 +298,8 @@ describe('A4-7 / A4-2: node shutdown and loss', () => {
     const text = dc.ydoc.getText('text').toJSON();
     expect(written.filter((m) => !text.includes(m))).toEqual([]);
     // every client converged on the same content
-    const texts = new Set(cs.map((x) => x.doc.text().toJSON()));
-    expect(texts.size).toBe(1);
+    // (acks do not imply the last broadcasts reached everyone yet, so wait for it)
+    await eventually(() => new Set(cs.map((x) => x.doc.text().toJSON())).size === 1, 10_000);
   }, 60_000);
 });
 
