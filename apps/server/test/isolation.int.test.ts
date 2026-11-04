@@ -14,6 +14,7 @@ let st: Stack;
 let A: Account;
 let B: Account;
 const SECRET_TEXT = 'TOP-SECRET-A';
+const FAKE_INVOICE = '00000000-0000-4000-8000-0000000000aa';
 const ids = { keyId: '', webhookId: '', deliveryId: '', memberId: '' };
 
 beforeAll(async () => {
@@ -198,6 +199,21 @@ const TENANT_ROUTES: Record<string, Attack[]> = {
     { who: 'spoof', path: () => '/v1/collections/notes/docs/secret1/export' },
     { who: 'secretB', path: () => '/v1/collections/notes/docs/secret1/export', denied: [404] },
   ],
+  'GET /v1/invoices': [{ who: 'spoof', path: () => '/v1/invoices' }],
+  'GET /v1/invoices/:id': [
+    { who: 'spoof', path: () => `/v1/invoices/${FAKE_INVOICE}` },
+    { who: 'own', path: () => `/v1/invoices/${FAKE_INVOICE}`, denied: [404] },
+  ],
+  'GET /v1/invoices/:id/html': [
+    { who: 'spoof', path: () => `/v1/invoices/${FAKE_INVOICE}/html` },
+    { who: 'own', path: () => `/v1/invoices/${FAKE_INVOICE}/html`, denied: [404] },
+  ],
+  'GET /v1/invoices/:id/pdf': [
+    { who: 'spoof', path: () => `/v1/invoices/${FAKE_INVOICE}/pdf` },
+    { who: 'own', path: () => `/v1/invoices/${FAKE_INVOICE}/pdf`, denied: [404] },
+  ],
+  'GET /v1/monitor/nodes': [{ who: 'spoof', path: () => '/v1/monitor/nodes' }],
+  'GET /v1/monitor/stream': [{ who: 'spoof', path: () => '/v1/monitor/stream' }],
   'GET /v1/changes': [
     { who: 'spoof', path: () => '/v1/changes' },
     { who: 'secretB', path: () => '/v1/changes', denied: [200] },

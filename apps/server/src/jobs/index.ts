@@ -11,3 +11,4 @@ export {
   materializeDue,
 } from './lifecycle.js';
 export { effectivePlan } from '../limits/plans.js';
+export { generateInvoices, previousMonth } from '../billing/generate.js';

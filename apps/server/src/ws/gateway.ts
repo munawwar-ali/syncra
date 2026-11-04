@@ -47,6 +47,8 @@ export interface GatewayOptions {
   highWater?: number;
   slowCloseMs?: number;
   onBackpressure?: (e: BackpressureEvent) => void;
+  /** Milliseconds from receiving an update to sending its ACK (the durable-commit latency). */
+  onAck?: (ms: number) => void;
   svc: DocService;
   verify: TokenVerifier;
   logger: Logger;
@@ -118,6 +120,12 @@ export class Gateway {
 
   get connectionCount(): number {
     return this.conns.size;
+  }
+
+  connectionsFor(tenantId: string): number {
+    let n = 0;
+    for (const c of this.conns) if (c.claims.tenantId === tenantId) n++;
+    return n;
   }
 
   attach(server: Server): void {
@@ -392,11 +400,13 @@ export class Gateway {
     const s = this.sub(conn, docKey);
     if (s.mode !== 'rw') throw new SyncraError('FORBIDDEN', 'Read-only access');
     conn.inFlight++;
+    const t0 = performance.now();
     if (conn.inFlight >= MAX_IN_FLIGHT) conn.ws.pause();
     void this.o.svc
       .write(s.hot, conn.clientId, opId, update)
       .then((seq) => {
         conn.send(encodeMessage({ type: 'ACK', docKey, opId, seq }));
+        this.o.onAck?.(performance.now() - t0);
       })
       .catch((e: unknown) => {
         this.sendError(conn, docKey, e);

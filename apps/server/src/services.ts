@@ -8,6 +8,7 @@ import { ApiKeys } from './control/keys.js';
 import { createTenantKeyProvider } from './control/signing.js';
 import { Tenants } from './control/tenants.js';
 import { DocService } from './core/doc-service.js';
+import { Monitor } from './core/monitor.js';
 import { Presence } from './core/presence.js';
 import { RedisPubSub, type PubSub } from './core/pubsub.js';
 import { gapRecoveries, opsReceived } from './observability/metrics.js';
@@ -31,6 +32,12 @@ export interface Services {
   docs: DocService;
   pubsub: PubSub;
   presence: Presence;
+  monitor: Monitor;
+  /** Late-bound by the node once the gateway exists; the monitor reads through these. */
+  live: {
+    stats(): { connections: number; hotDocs: number };
+    connectionsOf(tenantId: string): number;
+  };
   ring: ShardRing;
   quotas: QuotaService;
   counters: UsageCounters;
@@ -96,6 +103,14 @@ export function createServices(cfg: Config, deps: Deps, logger: Logger): Service
   );
 
   const ring = new ShardRing(deps.shards.length);
+  const live: Services['live'] = {
+    stats: () => ({ connections: 0, hotDocs: 0 }),
+    connectionsOf: () => 0,
+  };
+  const monitor = new Monitor(
+    () => live.stats(),
+    (tid) => live.connectionsOf(tid),
+  );
   const pubsub = new RedisPubSub(deps.redis, onErr('pubsub error'));
   const presence = new Presence(deps.redis, pubsub, cfg.NODE_ID);
   const docs = new DocService({
@@ -134,6 +149,7 @@ export function createServices(cfg: Config, deps: Deps, logger: Logger): Service
       },
       accepted: (tid, bytes) => {
         opsReceived.inc();
+        monitor.countOp(tid);
         quotas.recordWrite(tid, bytes).catch(onErr('usage record failed'));
       },
       created: (tid, collection, docId) => {
@@ -159,6 +175,7 @@ export function createServices(cfg: Config, deps: Deps, logger: Logger): Service
     },
   });
 
+  monitor.start();
   const lastUsed = setInterval(() => {
     apiKeys.flushLastUsed().catch(onErr('last_used flush failed'));
   }, 30_000);
@@ -176,6 +193,8 @@ export function createServices(cfg: Config, deps: Deps, logger: Logger): Service
     docs,
     pubsub,
     presence,
+    monitor,
+    live,
     ring,
     quotas,
     counters,
@@ -184,6 +203,7 @@ export function createServices(cfg: Config, deps: Deps, logger: Logger): Service
     webhooks,
     async stop() {
       clearInterval(lastUsed);
+      monitor.stop();
       await pubsub.close();
       webhooks.stop();
       await apiKeys.flushLastUsed().catch(onErr('last_used flush failed'));

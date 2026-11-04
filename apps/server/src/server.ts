@@ -9,7 +9,7 @@ import { createLogger } from './observability/logger.js';
 import { createServices, type Services } from './services.js';
 import { SyncraError } from '@syncra/shared';
 import { NodeRegistry } from './core/registry.js';
-import { backpressureEvents, registerGauges } from './observability/metrics.js';
+import { ackLatency, backpressureEvents, registerGauges } from './observability/metrics.js';
 import { Gateway } from './ws/gateway.js';
 
 export interface RunningNode {
@@ -40,6 +40,10 @@ export async function startNode(
     presence: services.presence,
     highWater: cfg.WS_OUTBOUND_HIGH_WATER,
     slowCloseMs: cfg.WS_SLOW_CLOSE_MS,
+    onAck: (ms) => {
+      ackLatency.labels(cfg.NODE_ID).observe(ms / 1000);
+      services.monitor.recordAck(ms);
+    },
     onBackpressure: (e) => {
       backpressureEvents.labels(e).inc();
     },
@@ -72,6 +76,8 @@ export async function startNode(
     hotDocs: services.docs.hotDocCount,
   });
   registerGauges(stats, cfg.NODE_ID);
+  services.live.stats = stats;
+  services.live.connectionsOf = (tid) => gateway.connectionsFor(tid);
   const registry = new NodeRegistry(deps.redis, cfg.NODE_ID, stats);
   registry.start();
   const presenceTouch = setInterval(() => {
