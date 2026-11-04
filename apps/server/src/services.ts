@@ -8,6 +8,9 @@ import { ApiKeys } from './control/keys.js';
 import { createTenantKeyProvider } from './control/signing.js';
 import { Tenants } from './control/tenants.js';
 import { DocService } from './core/doc-service.js';
+import { Presence } from './core/presence.js';
+import { RedisPubSub, type PubSub } from './core/pubsub.js';
+import { gapRecoveries, opsReceived } from './observability/metrics.js';
 import type { Config } from './config.js';
 import type { Deps } from './health.js';
 import { QuotaService } from './limits/quota.js';
@@ -26,6 +29,8 @@ export interface Services {
   tenantKeys: ReturnType<typeof createTenantKeyProvider>;
   verifyClientToken: TokenVerifier;
   docs: DocService;
+  pubsub: PubSub;
+  presence: Presence;
   ring: ShardRing;
   quotas: QuotaService;
   counters: UsageCounters;
@@ -91,8 +96,15 @@ export function createServices(cfg: Config, deps: Deps, logger: Logger): Service
   );
 
   const ring = new ShardRing(deps.shards.length);
+  const pubsub = new RedisPubSub(deps.redis, onErr('pubsub error'));
+  const presence = new Presence(deps.redis, pubsub, cfg.NODE_ID);
   const docs = new DocService({
     ring,
+    nodeId: cfg.NODE_ID,
+    pubsub,
+    onError: (what, e) => {
+      logger.warn({ err: e }, what);
+    },
     shards: deps.shards,
     cacheMax: cfg.HOT_DOC_CACHE_MAX,
     cacheIdleMs: cfg.HOT_DOC_IDLE_MS,
@@ -100,6 +112,9 @@ export function createServices(cfg: Config, deps: Deps, logger: Logger): Service
     batchMaxBytes: cfg.BATCH_MAX_BYTES,
     maxUpdateBytes: cfg.MAX_UPDATE_BYTES,
     hooks: {
+      gapRecovered: () => {
+        gapRecoveries.labels(cfg.NODE_ID).inc();
+      },
       checkCreate: (tid) => quotas.checkCreateDocument(tid),
       checkWrite: async (tid, w) => {
         const limits = await quotas.limitsFor(tid);
@@ -118,6 +133,7 @@ export function createServices(cfg: Config, deps: Deps, logger: Logger): Service
         await quotas.checkWrite(tid, w);
       },
       accepted: (tid, bytes) => {
+        opsReceived.inc();
         quotas.recordWrite(tid, bytes).catch(onErr('usage record failed'));
       },
       created: (tid, collection, docId) => {
@@ -158,6 +174,8 @@ export function createServices(cfg: Config, deps: Deps, logger: Logger): Service
     tenantKeys,
     verifyClientToken: createClientTokenVerifier(tenantKeys),
     docs,
+    pubsub,
+    presence,
     ring,
     quotas,
     counters,
@@ -166,6 +184,7 @@ export function createServices(cfg: Config, deps: Deps, logger: Logger): Service
     webhooks,
     async stop() {
       clearInterval(lastUsed);
+      await pubsub.close();
       webhooks.stop();
       await apiKeys.flushLastUsed().catch(onErr('last_used flush failed'));
     },

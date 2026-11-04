@@ -4,6 +4,7 @@ import { SyncraError } from '@syncra/shared';
 import type { Services } from '../services.js';
 import { registerControlRoutes } from './routes-control.js';
 import { registerDataRoutes } from './routes-data.js';
+import { registerHistoryRoutes } from './routes-history.js';
 
 export async function registerV1(app: FastifyInstance, s: Services): Promise<void> {
   await app.register(
@@ -19,6 +20,7 @@ export async function registerV1(app: FastifyInstance, s: Services): Promise<voi
       });
       registerControlRoutes(v1, s);
       registerDataRoutes(v1, s);
+      registerHistoryRoutes(v1, s);
       done();
     },
     { prefix: '/v1' },

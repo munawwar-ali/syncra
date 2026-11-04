@@ -3,14 +3,25 @@ name: syncra
 x-pg: &pg
   image: postgres:16-alpine
   command: ['postgres', '-c', 'synchronous_commit=on']
-  environment:
-    POSTGRES_USER: syncra
-    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-syncra_dev_password}
   healthcheck:
     test: ['CMD-SHELL', 'pg_isready -U syncra -d $$POSTGRES_DB']
     interval: 3s
     timeout: 3s
     retries: 20
+
+# Shared by server, worker and migrate. The defaults make `docker compose up` work on a fresh clone;
+# they are development values. Set real ones in .env before exposing the stack (docs/self-hosting.md).
+x-app-env: &app-env
+  NODE_ENV: production
+  CONTROL_DATABASE_URL: postgres://syncra:${POSTGRES_PASSWORD:-syncra_dev_password}@pg-control:5432/syncra_control
+  SHARD_DATABASE_URLS: postgres://syncra:${POSTGRES_PASSWORD:-syncra_dev_password}@pg-shard-0:5432/syncra_shard_0,postgres://syncra:${POSTGRES_PASSWORD:-syncra_dev_password}@pg-shard-1:5432/syncra_shard_1
+  REDIS_URL: redis://redis:6379
+  JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev-only-access-secret-change-me-0123456789}
+  ENCRYPTION_KEY: ${ENCRYPTION_KEY:-ZGV2LW9ubHktZW5jcnlwdGlvbi1rZXktMzItYnl0ZXM=}
+  PUBLIC_URL: ${PUBLIC_URL:-http://localhost:8080}
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  BILLING_ENABLED: ${BILLING_ENABLED:-false}
+  WEBHOOK_ALLOW_PRIVATE: ${WEBHOOK_ALLOW_PRIVATE:-false}
 
 services:
   pg-control:
@@ -46,6 +57,52 @@ services:
       interval: 3s
       timeout: 3s
       retries: 20
+
+  # One-shot: migrations on the control DB and both shards, then the demo tenant (credentials printed to its log).
+  migrate:
+    build: { context: ../.., dockerfile: infra/docker/Dockerfile.migrate }
+    restart: 'no'
+    environment:
+      <<: *app-env
+      SEED_DEMO_TENANT: ${SEED_DEMO_TENANT:-true}
+      CREDENTIALS_FILE: /credentials/.syncra-demo-credentials.txt
+    volumes: [../../.syncra:/credentials]
+    depends_on:
+      pg-control: { condition: service_healthy }
+      pg-shard-0: { condition: service_healthy }
+      pg-shard-1: { condition: service_healthy }
+
+  # Scale with: docker compose up --scale server=3
+  server:
+    build: { context: ../.., dockerfile: infra/docker/Dockerfile.server }
+    environment:
+      <<: *app-env
+      PORT: '8080'
+      TRUST_PROXY: 'true'
+      DEMO_MODE: ${DEMO_MODE:-true}
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080}
+    stop_grace_period: 20s # SIGTERM -> close 1001 -> flush batched writes -> exit
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+
+  worker:
+    build: { context: ../.., dockerfile: infra/docker/Dockerfile.worker }
+    environment:
+      <<: *app-env
+      WORKER_PORT: '9100'
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports: ['8080:80']
+    volumes:
+      - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      server: { condition: service_healthy }
 
 volumes:
   pgdata-control:

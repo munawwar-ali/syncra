@@ -24,6 +24,9 @@ import {
 import { resolveAccess } from '../auth/access.js';
 import type { ClientClaims, TokenVerifier } from '../auth/jwt.js';
 import type { DocService, HotDoc, Subscriber } from '../core/doc-service.js';
+import { encodeAwareness, parseAwareness, type Presence } from '../core/presence.js';
+import { InProcessLimiter } from '../limits/token-bucket.js';
+import { Outbound, type BackpressureEvent } from './outbound.js';
 
 /** Hooks that bring rate limits, quotas and metering into the gateway; all optional. */
 export interface GatewayPolicy {
@@ -39,6 +42,11 @@ export interface GatewayPolicy {
 
 export interface GatewayOptions {
   policy?: GatewayPolicy;
+  presence?: Presence;
+  /** Backpressure: stop writing broadcasts above this many buffered bytes (Doc 03 WS_OUTBOUND_HIGH_WATER). */
+  highWater?: number;
+  slowCloseMs?: number;
+  onBackpressure?: (e: BackpressureEvent) => void;
   svc: DocService;
   verify: TokenVerifier;
   logger: Logger;
@@ -66,15 +74,29 @@ class Connection implements Subscriber {
   rejected = false;
   lastRateError = 0;
   expiryTimer: NodeJS.Timeout | undefined;
+  /** Awareness client ids this connection has announced per document, with their last clock. */
+  readonly awareness = new Map<string, Map<number, number>>();
+  readonly outbound: Outbound;
 
   constructor(
     readonly ws: WebSocket,
     readonly claims: ClientClaims,
     readonly clientId: string,
-  ) {}
+    opts: { highWater: number; slowCloseMs: number; onEvent?: (e: BackpressureEvent) => void },
+  ) {
+    this.outbound = new Outbound(ws, opts);
+  }
 
   send(frame: Uint8Array): void {
-    if (this.ws.readyState === WebSocket.OPEN) this.ws.send(frame);
+    this.outbound.send(frame);
+  }
+
+  broadcast(docKey: string, seq: number, originClientId: string, update: Uint8Array): void {
+    this.outbound.broadcast(docKey, seq, originClientId, update);
+  }
+
+  sendEphemeral(frame: Uint8Array): void {
+    this.outbound.sendEphemeral(frame);
   }
 }
 
@@ -83,6 +105,8 @@ export class Gateway {
   private readonly conns = new Set<Connection>();
   private readonly byClient = new Map<string, Connection>();
   private timer: NodeJS.Timeout | undefined;
+  private draining = false;
+  private readonly awLimiter = new InProcessLimiter();
 
   constructor(private readonly o: GatewayOptions) {
     this.wss = new WebSocketServer({
@@ -101,6 +125,10 @@ export class Gateway {
       const url = new URL(req.url ?? '/', 'http://localhost');
       if (url.pathname !== '/v1/connect') {
         socket.destroy();
+        return;
+      }
+      if (this.draining) {
+        reject(socket, 503); // shutting down: clients retry another node
         return;
       }
       void (async () => {
@@ -148,7 +176,11 @@ export class Gateway {
   }
 
   private onConnection(ws: WebSocket, claims: ClientClaims, clientId: string): void {
-    const conn = new Connection(ws, claims, clientId);
+    const conn = new Connection(ws, claims, clientId, {
+      highWater: this.o.highWater ?? 1_048_576,
+      slowCloseMs: this.o.slowCloseMs ?? 15_000,
+      onEvent: this.o.onBackpressure,
+    });
     const slot = `${claims.tenantId}\u0000${clientId}`;
     this.byClient.get(slot)?.ws.close(CLOSE_CODES.NORMAL, 'replaced');
     this.byClient.set(slot, conn);
@@ -203,6 +235,8 @@ export class Gateway {
     ws.on('close', () => {
       this.conns.delete(conn);
       clearTimeout(conn.expiryTimer);
+      conn.outbound.dispose();
+      this.announceGone(conn);
       if (conn.admitted) this.o.policy?.release?.(claims.tenantId);
       if (this.byClient.get(slot) === conn) this.byClient.delete(slot);
       for (const s of conn.subs.values()) this.o.svc.unsubscribe(s.hot, conn);
@@ -260,11 +294,19 @@ export class Gateway {
             access: sub.mode === 'rw' ? 1 : 0,
           }),
         );
+        // Who is already here, on any node.
+        for (const update of (await this.o.presence?.snapshot(conn.claims.tenantId, msg.docKey)) ??
+          []) {
+          conn.sendEphemeral(encodeMessage({ type: 'AWARENESS', docKey: msg.docKey, update }));
+        }
         return;
       }
       case 'UNSUBSCRIBE': {
         const sub = conn.subs.get(msg.docKey);
-        if (sub) svc.unsubscribe(sub.hot, conn);
+        if (sub) {
+          svc.unsubscribe(sub.hot, conn);
+          this.announceGone(conn, msg.docKey);
+        }
         conn.subs.delete(msg.docKey);
         return;
       }
@@ -292,15 +334,50 @@ export class Gateway {
         return;
       case 'AWARENESS': {
         const { hot } = this.sub(conn, msg.docKey);
-        if (msg.update.length > LIMITS.maxAwarenessBytes) {
-          throw new SyncraError('PAYLOAD_TOO_LARGE', 'Awareness state too large');
+        const entries = parseAwareness(msg.update);
+        if (!entries) {
+          throw new SyncraError(
+            msg.update.length > LIMITS.maxAwarenessBytes
+              ? 'PAYLOAD_TOO_LARGE'
+              : 'VALIDATION_FAILED',
+            'Invalid awareness update',
+          );
         }
-        const frame = encodeMessage(msg);
-        for (const s of hot.subs) if (s !== conn) s.send(frame);
+        // 20 updates per second per client (Doc 03 §10); extras are dropped, presence is ephemeral.
+        if (!this.awLimiter.takeSync(`aw:${conn.id}`, { capacity: 20, ratePerSec: 20 }).allowed)
+          return;
+        const known = conn.awareness.get(msg.docKey) ?? new Map<number, number>();
+        conn.awareness.set(msg.docKey, known);
+        for (const e of entries) {
+          if (e.state === 'null') known.delete(e.clientId);
+          else known.set(e.clientId, e.clock);
+        }
+        svc.forwardAwareness(hot, conn, msg.update);
+        void this.o.presence?.record(conn.claims.tenantId, msg.docKey, entries);
+        void this.o.presence?.publish(conn.claims.tenantId, msg.docKey, msg.update);
         return;
       }
       default:
         throw new SyncraError('VALIDATION_FAILED', `Unexpected message ${msg.type}`);
+    }
+  }
+
+  /** Tells everyone that this connection's awareness clients left (clean close, unsubscribe or crash). */
+  private announceGone(conn: Connection, onlyDocKey?: string): void {
+    for (const [docKey, ids] of conn.awareness) {
+      if (onlyDocKey !== undefined && docKey !== onlyDocKey) continue;
+      if (ids.size === 0) continue;
+      const entries = [...ids].map(([clientId, clock]) => ({
+        clientId,
+        clock: clock + 1,
+        state: 'null',
+      }));
+      const update = encodeAwareness(entries);
+      const sub = conn.subs.get(docKey);
+      if (sub) this.o.svc.forwardAwareness(sub.hot, conn, update);
+      void this.o.presence?.record(conn.claims.tenantId, docKey, entries);
+      void this.o.presence?.publish(conn.claims.tenantId, docKey, update);
+      conn.awareness.delete(docKey);
     }
   }
 
@@ -344,8 +421,16 @@ export class Gateway {
     );
   }
 
+  /** Hard kill (chaos tests, demo "kill node"): drop every socket with no close frame and no flush. */
+  kill(): void {
+    this.draining = true;
+    clearInterval(this.timer);
+    for (const c of this.conns) c.ws.terminate();
+  }
+
   /** Graceful shutdown: close sockets with 1001, then flush buffered writes. */
   async close(): Promise<void> {
+    this.draining = true;
     clearInterval(this.timer);
     for (const c of this.conns) c.ws.close(CLOSE_CODES.GOING_AWAY, 'server going away');
     await this.o.svc.drain();
@@ -371,6 +456,7 @@ const REASONS: Record<number, string> = {
   400: 'Bad Request',
   401: 'Unauthorized',
   429: 'Too Many Requests',
+  503: 'Service Unavailable',
 };
 
 function reject(socket: Duplex, status: number): void {
