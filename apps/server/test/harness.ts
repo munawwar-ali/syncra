@@ -11,7 +11,8 @@ import { createClientTokenVerifier } from '../src/auth/jwt.js';
 import type { AccessRule } from '../src/auth/access.js';
 import { DocService, type DocServiceOptions } from '../src/core/doc-service.js';
 import { ShardRing } from '../src/shards/ring.js';
-import { Gateway } from '../src/ws/gateway.js';
+import { Gateway, type GatewayOptions } from '../src/ws/gateway.js';
+import type { Presence } from '../src/core/presence.js';
 
 export const SECRET = 'test-secret-test-secret-test-secret-1234';
 
@@ -22,7 +23,11 @@ export interface Harness {
   gateway: Gateway;
   pools: pg.Pool[];
   ring: ShardRing;
+  /** True once the node was closed or crashed. */
+  stopped: boolean;
   close(): Promise<void>;
+  /** Abrupt loss of the node: sockets die with no 1001, no flush, no deregistration. */
+  crash(): Promise<void>;
 }
 
 export function makePools(): pg.Pool[] {
@@ -33,6 +38,7 @@ export async function startServer(
   overrides: Partial<DocServiceOptions> = {},
   pools: pg.Pool[] = makePools(),
   port = 0,
+  extra: { presence?: Presence; gateway?: Partial<GatewayOptions> } = {},
 ): Promise<Harness> {
   const ring = new ShardRing(pools.length);
   const svc = new DocService({
@@ -52,6 +58,8 @@ export async function startServer(
     ),
     logger: pino({ level: 'silent' }),
     maxMessageBytes: 2_097_152,
+    presence: extra.presence,
+    ...extra.gateway,
   });
   const server: Server = createServer();
   gateway.attach(server);
@@ -64,6 +72,12 @@ export async function startServer(
     gateway,
     pools,
     ring,
+    stopped: false,
+    async crash() {
+      gateway.kill();
+      server.closeAllConnections();
+      await new Promise((res) => server.close(res));
+    },
     async close() {
       await gateway.close();
       server.closeAllConnections();

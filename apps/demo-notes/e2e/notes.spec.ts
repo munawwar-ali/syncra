@@ -20,6 +20,15 @@ async function signIn(browser: Browser, name: string): Promise<Window2> {
 
 const badge = (p: Page) => p.getByTestId('sync-badge');
 const editor = (p: Page) => p.getByTestId('editor');
+/** The document text only: remote cursor labels ("Ada", "Ben") are decorations inside the editor DOM. */
+const content = (p: Page): Promise<string> =>
+  editor(p).evaluate((el) => {
+    const copy = el.cloneNode(true) as HTMLElement;
+    copy.querySelectorAll('.collaboration-cursor__caret').forEach((n) => {
+      n.remove();
+    });
+    return copy.innerText;
+  });
 const pending = async (p: Page): Promise<number> =>
   Number((await p.getByTestId('pending').innerText()).split(' ')[0]);
 
@@ -68,15 +77,11 @@ test.describe('DEM-01 scripted scenario (Doc 04 §10.1, steps 1-5)', () => {
     await ben.page.getByTestId('chaos-offline').click();
     await expect(badge(ben.page)).toHaveAttribute('data-state', 'live');
     await expect.poll(() => pending(ben.page)).toBe(0);
+    await expect.poll(async () => (await content(ada.page)).includes('Ben three.')).toBe(true);
     await expect
-      .poll(async () => (await editor(ada.page).innerText()).includes('Ben three.'))
+      .poll(async () => (await content(ada.page)) === (await content(ben.page)))
       .toBe(true);
-    await expect
-      .poll(
-        async () => (await editor(ada.page).innerText()) === (await editor(ben.page).innerText()),
-      )
-      .toBe(true);
-    const merged = await editor(ben.page).innerText();
+    const merged = await content(ben.page);
     expect(merged).toContain('Plan for Monday.');
     expect(merged).toContain('Ada added a second line.');
     expect(merged).not.toContain('Temporary text.');

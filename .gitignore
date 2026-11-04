@@ -10,3 +10,4 @@ playwright-report
 .local-data
 .claude/.headroom_wrap_owners.json
 .claude/
+.syncra/

@@ -169,6 +169,41 @@ const TENANT_ROUTES: Record<string, Attack[]> = {
     { who: 'spoof', path: () => '/v1/collections/notes/docs/secret1' },
     { who: 'secretB', path: () => '/v1/collections/notes/docs/secret1', denied: [404] },
   ],
+  'GET /v1/collections/:c/docs/:id/history': [
+    { who: 'spoof', path: () => '/v1/collections/notes/docs/secret1/history' },
+    { who: 'secretB', path: () => '/v1/collections/notes/docs/secret1/history', denied: [404] },
+  ],
+  'GET /v1/collections/:c/docs/:id/history/:seq': [
+    { who: 'spoof', path: () => '/v1/collections/notes/docs/secret1/history/1' },
+    { who: 'secretB', path: () => '/v1/collections/notes/docs/secret1/history/1', denied: [404] },
+  ],
+  'POST /v1/collections/:c/docs/:id/restore': [
+    {
+      who: 'spoof',
+      path: () => '/v1/collections/notes/docs/secret1/restore',
+      body: () => ({ seq: 1 }),
+    },
+    {
+      who: 'secretB',
+      path: () => '/v1/collections/notes/docs/secret1/restore',
+      body: () => ({ seq: 1 }),
+      denied: [404],
+    },
+  ],
+  'GET /v1/collections/:c/docs/:id/ops': [
+    { who: 'spoof', path: () => '/v1/collections/notes/docs/secret1/ops' },
+    { who: 'own', path: () => '/v1/collections/notes/docs/secret1/ops', denied: [404] },
+  ],
+  'GET /v1/collections/:c/docs/:id/export': [
+    { who: 'spoof', path: () => '/v1/collections/notes/docs/secret1/export' },
+    { who: 'secretB', path: () => '/v1/collections/notes/docs/secret1/export', denied: [404] },
+  ],
+  'GET /v1/changes': [
+    { who: 'spoof', path: () => '/v1/changes' },
+    { who: 'secretB', path: () => '/v1/changes', denied: [200] },
+  ],
+  // The stream shares its auth with /changes; only the rejected case can be asserted without hanging on SSE.
+  'GET /v1/changes/stream': [{ who: 'spoof', path: () => '/v1/changes/stream' }],
   'POST /v1/sync/:c/:id/pull': [
     {
       who: 'clientB',

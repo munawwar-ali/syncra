@@ -1,0 +1,10 @@
+**/node_modules
+**/dist
+**/.turbo
+.git
+.local-data
+**/test-results
+**/playwright-report
+docs/spec
+*.md
+!README.md

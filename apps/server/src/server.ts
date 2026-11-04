@@ -8,6 +8,8 @@ import { closeDeps, createDeps, type Deps } from './health.js';
 import { createLogger } from './observability/logger.js';
 import { createServices, type Services } from './services.js';
 import { SyncraError } from '@syncra/shared';
+import { NodeRegistry } from './core/registry.js';
+import { backpressureEvents, registerGauges } from './observability/metrics.js';
 import { Gateway } from './ws/gateway.js';
 
 export interface RunningNode {
@@ -35,6 +37,12 @@ export async function startNode(
     verify: services.verifyClientToken,
     logger,
     maxMessageBytes: cfg.MAX_MESSAGE_BYTES,
+    presence: services.presence,
+    highWater: cfg.WS_OUTBOUND_HIGH_WATER,
+    slowCloseMs: cfg.WS_SLOW_CLOSE_MS,
+    onBackpressure: (e) => {
+      backpressureEvents.labels(e).inc();
+    },
     policy: {
       trustProxy: cfg.TRUST_PROXY,
       admit: async (ip) => {
@@ -59,6 +67,17 @@ export async function startNode(
     },
   });
   gateway.attach(app.server);
+  const stats = () => ({
+    connections: gateway.connectionCount,
+    hotDocs: services.docs.hotDocCount,
+  });
+  registerGauges(stats, cfg.NODE_ID);
+  const registry = new NodeRegistry(deps.redis, cfg.NODE_ID, stats);
+  registry.start();
+  const presenceTouch = setInterval(() => {
+    void services.presence.touch(services.docs.activeDocs());
+  }, 20_000);
+  presenceTouch.unref();
   await app.listen({ port: cfg.PORT, host: '0.0.0.0' });
   const address = app.server.address();
   const port = typeof address === 'object' && address ? address.port : cfg.PORT;
@@ -70,6 +89,9 @@ export async function startNode(
     deps,
     port,
     async stop() {
+      // Graceful (SYN-10): leave the registry, refuse new sockets, close with 1001, flush batched writes.
+      clearInterval(presenceTouch);
+      await registry.stop();
       await gateway.close();
       await app.close();
       await services.stop();
