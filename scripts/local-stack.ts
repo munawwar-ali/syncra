@@ -13,6 +13,9 @@ import pg from 'pg';
 import { loadConfig } from '../apps/server/src/config.js';
 import { seedDemoTenant } from '../apps/server/src/control/seed.js';
 import { migrateAll } from '../apps/server/src/db/migrate.js';
+import { flushUsage, refreshGauges } from '../apps/server/src/jobs/usage.js';
+import { maintainShard } from '../apps/server/src/jobs/lifecycle.js';
+import { WebhookDispatcher } from '../apps/server/src/webhooks/dispatcher.js';
 import { createDeps } from '../apps/server/src/health.js';
 import { startNode } from '../apps/server/src/server.js';
 
@@ -73,7 +76,32 @@ console.log(
   `[local-stack] sync node on http://localhost:${String(node.port)} (demo mode, embedded Postgres)`,
 );
 
+// The worker app is not part of this stack, so run its jobs in-process (same code, short intervals).
+const dispatcher = new WebhookDispatcher(deps.control, {
+  encryptionKey: Buffer.from(cfg.ENCRYPTION_KEY, 'base64'),
+  allowPrivate: cfg.WEBHOOK_ALLOW_PRIVATE,
+});
+const jobs = [
+  setInterval(() => void dispatcher.runDue().catch(() => undefined), 1000),
+  setInterval(() => {
+    void flushUsage(deps.redis, deps.control).catch(() => undefined);
+    void refreshGauges(deps.shards, deps.control).catch(() => undefined);
+  }, 3000),
+  setInterval(() => {
+    for (const shard of deps.shards) {
+      void maintainShard(shard, deps.redis, {
+        everyOps: cfg.SNAPSHOT_EVERY_OPS,
+        everyBytes: cfg.SNAPSHOT_EVERY_BYTES,
+        idleMs: cfg.SNAPSHOT_IDLE_MS,
+        checkpointMs: cfg.CHECKPOINT_INTERVAL_MS,
+        retentionDays: () => Promise.resolve(30),
+      }).catch(() => undefined);
+    }
+  }, 2000),
+];
+
 const shutdown = async (): Promise<void> => {
+  jobs.forEach(clearInterval);
   await node.stop().catch(() => undefined);
   await embedded.stop().catch(() => undefined);
   process.exit(0);

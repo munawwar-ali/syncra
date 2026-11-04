@@ -29,10 +29,22 @@ export function registerControlRoutes(app: FastifyInstance, s: Services): void {
     });
   };
 
-  /** Login/signup/refresh attempts are limited per IP (default 5 per minute). */
-  const authLimit = async (ip: string): Promise<void> => {
-    const perMin = s.cfg.RL_AUTH_PER_MIN;
-    const r = await s.limiter.take(`auth:${ip}`, { capacity: perMin, ratePerSec: perMin / 60 });
+  /**
+   * Credential-guessing endpoints (login, signup, accept-invite) allow 5 attempts per minute per IP.
+   * Refresh is a separate, looser bucket: every page load and tab does one, a refresh token is a
+   * 256-bit secret that cannot be guessed, and sharing the strict bucket would lock out ordinary
+   * users (several tabs, or several people behind one office IP).
+   */
+  const authLimit = async (
+    ip: string,
+    kind: 'credentials' | 'refresh' = 'credentials',
+  ): Promise<void> => {
+    const perMin =
+      kind === 'refresh' ? Math.max(120, s.cfg.RL_AUTH_PER_MIN * 24) : s.cfg.RL_AUTH_PER_MIN;
+    const r = await s.limiter.take(`auth:${kind}:${ip}`, {
+      capacity: perMin,
+      ratePerSec: perMin / 60,
+    });
     if (!r.allowed)
       throw new SyncraError('RATE_LIMITED', 'Too many attempts', {
         scope: 'auth',
@@ -68,7 +80,7 @@ export function registerControlRoutes(app: FastifyInstance, s: Services): void {
   });
 
   app.post('/auth/refresh', async (req, reply) => {
-    await authLimit(req.ip);
+    await authLimit(req.ip, 'refresh');
     const raw = req.cookies[REFRESH_COOKIE];
     if (!raw) throw new SyncraError('UNAUTHENTICATED', 'No refresh cookie');
     const r = await s.accounts.refresh(raw);
@@ -190,6 +202,20 @@ export function registerControlRoutes(app: FastifyInstance, s: Services): void {
   app.post('/tokens', async (req) => {
     const p = await authSecret(s, req);
     return mintClientToken(s.tenantKeys, p.tenantId, parse(mintRequestSchema, req.body));
+  });
+
+  // Dashboard Playground (DX-06): a one-hour token limited to the `playground` collection, so the
+  // browser never needs a secret key. Developers and above only, like any other write.
+  app.post('/tokens/playground', async (req) => {
+    const p = await authDashboard(s, req);
+    requireCan(p.role, 'docs.write');
+    const { userId } = parse(z.object({ userId: z.string().min(1).max(100) }), req.body);
+    return mintClientToken(s.tenantKeys, p.tenantId, {
+      userId: `playground-${userId}`,
+      ttlSeconds: 3600,
+      access: [{ collection: 'playground', docs: '*', mode: 'rw' }],
+      meta: {},
+    });
   });
 
   // ---- audit, usage ---------------------------------------------------------------------

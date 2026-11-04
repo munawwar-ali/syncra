@@ -113,6 +113,9 @@ const TENANT_ROUTES: Record<string, Attack[]> = {
       denied: [401, 403],
     },
   ],
+  'POST /v1/tokens/playground': [
+    { who: 'spoof', path: () => '/v1/tokens/playground', body: () => ({ userId: 'x' }) },
+  ],
   'GET /v1/audit': [{ who: 'spoof', path: () => '/v1/audit' }],
   'GET /v1/usage/current': [{ who: 'spoof', path: () => '/v1/usage/current' }],
   'GET /v1/usage': [{ who: 'spoof', path: () => '/v1/usage' }],
