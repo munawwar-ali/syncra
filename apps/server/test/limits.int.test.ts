@@ -124,6 +124,31 @@ describe('A3-3 rate limits (OPS-01)', () => {
   });
 });
 
+describe('refresh is not throttled like login (regression)', () => {
+  it('a signed-in user can refresh far more often than the 5/min credential limit allows', async () => {
+    const s = await stack({ RL_AUTH_PER_MIN: '3' });
+    const a = await signup(s.api); // spends 1 of 3 credential attempts
+    let cookie = a.refreshCookie;
+    for (let i = 0; i < 25; i++) {
+      const r = await s.api('POST', '/v1/auth/refresh', { cookie });
+      expect(r.status, `refresh #${String(i + 1)}`).toBe(200);
+      cookie = r.cookie as string;
+    }
+    // while credential guessing is still limited
+    const codes: number[] = [];
+    for (let i = 0; i < 5; i++) {
+      codes.push(
+        (
+          await s.api('POST', '/v1/auth/login', {
+            body: { email: 'x@example.com', password: 'wrong-password-1' },
+          })
+        ).status,
+      );
+    }
+    expect(codes).toContain(429);
+  });
+});
+
 describe('A3-4 quotas (OPS-03, OPS-05, BIL-01, BIL-05)', () => {
   let s: Stack;
   beforeAll(async () => {

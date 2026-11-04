@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #ffffff;
+  --surface: #f6f7fb;
+  --surface-2: #eceff7;
+  --text: #0f172a;
+  --text-muted: #5b6478;
+  --border: #dde2ef;
+  --primary: #4f46e5;
+  --primary-contrast: #ffffff;
+  --success: #16a34a;
+  /* The spec green is 3.3:1 on white; text needs 4.5:1, so text uses this darker variant. */
+  --success-text: #15803d;
+  --warning: #b45309;
+  --danger: #dc2626;
+  --offline: #6b7280;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #0b1020;
+    --surface: #131a2e;
+    --surface-2: #1b2440;
+    --text: #e6e9f5;
+    --text-muted: #9aa4bf;
+    --border: #28324f;
+    --primary: #818cf8;
+    --primary-contrast: #0b1020;
+    --success: #4ade80;
+    --success-text: #4ade80;
+    --warning: #fbbf24;
+    --danger: #f87171;
+    --offline: #9ca3af;
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: #0b1020;
+  --surface: #131a2e;
+  --surface-2: #1b2440;
+  --text: #e6e9f5;
+  --text-muted: #9aa4bf;
+  --border: #28324f;
+  --primary: #818cf8;
+  --primary-contrast: #0b1020;
+  --success: #4ade80;
+  --success-text: #4ade80;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --offline: #9ca3af;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 50%, var(--surface) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: 6px;
+}
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
+/* Tables become stacked cards on narrow screens (Doc 04 §8.2). */
+@media (max-width: 639px) {
+  table.responsive thead {
+    position: absolute;
+    left: -9999px;
+  }
+  table.responsive tr {
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    padding: 0.5rem;
+  }
+  table.responsive td {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.25rem 0.5rem;
+    border: 0;
+  }
+  table.responsive td::before {
+    content: attr(data-label);
+    color: var(--text-muted);
+  }
+}
