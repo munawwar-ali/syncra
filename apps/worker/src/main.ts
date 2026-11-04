@@ -12,8 +12,10 @@ import {
   WebhookDispatcher,
   effectivePlan,
   flushUsage,
+  generateInvoices,
   loadConfig,
   maintainShard,
+  previousMonth,
   purgeDeleted,
   refreshGauges,
 } from '@syncra/server/jobs';
@@ -108,6 +110,17 @@ const timers = [
       bytesReclaimed.inc(s.bytesReclaimed);
       verifyFailures.inc(s.verifyFailures);
     }
+  }),
+  // Checked hourly; on day 1 after 00:10 UTC it bills the month that just ended. Re-running is harmless (unique per tenant and month).
+  schedule('billing:invoice', 3_600_000, async () => {
+    const now = new Date();
+    if (
+      !cfg.BILLING_ENABLED ||
+      now.getUTCDate() !== 1 ||
+      now.getUTCHours() * 60 + now.getUTCMinutes() < 10
+    )
+      return;
+    await generateInvoices(control, previousMonth(now));
   }),
   schedule('doc:purge', 3_600_000, () => {
     const week = new Date(Date.now() - 7 * 86_400_000);

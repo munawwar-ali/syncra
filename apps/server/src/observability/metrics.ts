@@ -11,6 +11,14 @@ export const httpDuration = new Histogram({
   registers: [registry],
 });
 
+export const ackLatency = new Histogram({
+  name: 'syncra_ack_latency_seconds',
+  help: 'Time from receiving an update to acknowledging its durable commit',
+  labelNames: ['node'] as const,
+  buckets: [0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5],
+  registers: [registry],
+});
+
 export const gapRecoveries = new Counter({
   name: 'syncra_gap_recoveries_total',
   help: 'Missed fan-out updates repaired from Postgres',
