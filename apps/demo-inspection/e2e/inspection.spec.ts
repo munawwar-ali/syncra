@@ -122,3 +122,26 @@ test("role split: supervisor sees the inspector's work, comments, and cannot edi
   await ctxA.close();
   await ctxB.close();
 });
+
+test('screenshot for the README (SCREENSHOTS=1)', async ({ page }) => {
+  test.skip(!process.env.SCREENSHOTS, 'set SCREENSHOTS=1 to regenerate docs/images');
+  await page.setViewportSize({ width: 430, height: 800 });
+  await login(page, 'Ines', 'inspector');
+  await sitesLoaded(page);
+  await page.waitForTimeout(1500);
+  await inspect(page);
+  await page
+    .getByRole('group', { name: 'Fire exits clear result' })
+    .getByRole('button', { name: 'pass' })
+    .click();
+  await page
+    .getByRole('group', { name: 'First aid kit stocked result' })
+    .getByRole('button', { name: 'fail' })
+    .click();
+  await page.getByLabel('Inspector notes').fill('First aid kit is empty; restock before Friday.');
+  await page.setViewportSize({ width: 430, height: 1400 }); // tall enough that no sticky bar floats mid-image
+  await page.evaluate(() => {
+    window.scrollTo(0, 0);
+  });
+  await page.screenshot({ path: '../../docs/images/inspection.png' });
+});

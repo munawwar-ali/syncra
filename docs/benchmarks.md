@@ -1,7 +1,7 @@
 # Benchmarks
 
-Every number on this page comes from a committed result file in [`loadtest/results/`](../loadtest/results)
-produced by a script in [`loadtest/`](../loadtest). Nothing here is estimated. If a number is not on this
+Every number on this page comes from a committed result file in [`loadtest/results/`](https://github.com/munawwar-ali/syncra/tree/main/loadtest/results)
+produced by a script in [`loadtest/`](https://github.com/munawwar-ali/syncra/tree/main/loadtest). Nothing here is estimated. If a number is not on this
 page, it has not been measured.
 
 ## Read this first: what these runs are and are not

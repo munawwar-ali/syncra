@@ -183,3 +183,48 @@ test.describe('A2-3 multi-tab', () => {
     await check.ctx.close();
   });
 });
+
+test.describe('server view panel (P6-T01)', () => {
+  test('shows what the server holds: lags while offline, catches up when back online', async ({
+    browser,
+  }) => {
+    const { page } = await signIn(browser, 'Vera');
+    await page.getByRole('button', { name: 'New note' }).click();
+    await expect(editor(page)).toBeVisible();
+    await editor(page).click();
+    await page.keyboard.type('first line');
+    await expect(page.getByTestId('server-text')).toContainText('first line');
+
+    await page.getByTestId('chaos-offline').click();
+    await editor(page).click(); // the button took focus
+    await page.keyboard.press('End');
+    await page.keyboard.type(' second line');
+    await page.waitForTimeout(2500); // two refreshes: the server still has the old text
+    await expect(page.getByTestId('server-text')).not.toContainText('second line');
+
+    await page.getByTestId('chaos-offline').click();
+    await expect(page.getByTestId('server-text')).toContainText('second line');
+  });
+});
+
+test('screenshot for the README (SCREENSHOTS=1)', async ({ browser }) => {
+  test.skip(!process.env.SCREENSHOTS, 'set SCREENSHOTS=1 to regenerate docs/images');
+  const ada = await signIn(browser, 'Ada');
+  const ben = await signIn(browser, 'Ben');
+  await ada.page.getByRole('button', { name: 'New note' }).click();
+  await expect(editor(ada.page)).toBeVisible();
+  await ben.page.goto(ada.page.url());
+  await expect(editor(ben.page)).toBeVisible();
+  await editor(ada.page).click();
+  await ada.page.keyboard.type('Plan for Monday: ship the release notes.');
+  await expect(editor(ben.page)).toContainText('ship the release notes');
+  await ben.page.getByTestId('chaos-offline').click();
+  await editor(ben.page).click();
+  await ben.page.keyboard.type(' Ben adds the benchmark table while offline.');
+  await ben.page.setViewportSize({ width: 1180, height: 640 });
+  await expect(ben.page.getByTestId('sync-badge')).toContainText('Offline');
+  await expect(ben.page.getByTestId('server-text')).toContainText('ship the release notes');
+  await ben.page.screenshot({ path: '../../docs/images/notes.png' });
+  await ada.ctx.close();
+  await ben.ctx.close();
+});

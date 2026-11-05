@@ -19,7 +19,11 @@
     "compose:up": "docker compose -f infra/compose/docker-compose.yml up --build",
     "db:migrate": "pnpm --filter @syncra/server db:migrate",
     "prepare": "husky",
-    "dev:local": "tsx scripts/local-stack.ts"
+    "dev:local": "tsx scripts/local-stack.ts",
+    "dev": "tsx scripts/local-stack.ts",
+    "loadtest": "pnpm --filter @syncra/loadtest bench",
+    "docs:dev": "pnpm --filter @syncra/docs dev",
+    "docs:build": "pnpm --filter @syncra/docs build"
   },
   "lint-staged": {
     "*.{ts,tsx,js,json,md,yml}": "prettier --write"
@@ -43,5 +47,15 @@
     "typescript": "^5.6.0",
     "typescript-eslint": "^8.8.0",
     "vitest": "^2.1.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "node-pg-migrate>glob": "^11.1.0"
+    },
+    "auditConfig": {
+      "ignoreGhsas": [
+        "GHSA-mrhx-c7xc-m3w5"
+      ]
+    }
   }
 }

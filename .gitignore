@@ -11,3 +11,4 @@ playwright-report
 .claude/.headroom_wrap_owners.json
 .claude/
 .syncra/
+docs/.vitepress/cache

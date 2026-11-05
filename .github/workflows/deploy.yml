@@ -1,0 +1,23 @@
+name: deploy
+# Manual deploy to a single Docker host over SSH (docs/deployment.md). Never run against a real host yet.
+on:
+  workflow_dispatch:
+
+concurrency: deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Update the host
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          USER_NAME: ${{ secrets.DEPLOY_USER }}
+          KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+        run: |
+          install -m 600 /dev/null key
+          printf '%s\n' "$KEY" > key
+          ssh -i key -o StrictHostKeyChecking=accept-new "$USER_NAME@$HOST" \
+            "cd '$DEPLOY_PATH' && git pull --ff-only && docker compose -f infra/compose/docker-compose.yml up -d --build"
