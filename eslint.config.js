@@ -13,6 +13,7 @@ export default tseslint.config(
       '**/tailwind.config.js',
       // k6 scripts run in k6's own runtime (not Node, not in any tsconfig); syntax-checked with `node --check`.
       'loadtest/k6/**/*.js',
+      'scripts/*.mjs', // plain Node scripts, outside any tsconfig
     ],
   },
   js.configs.recommended,

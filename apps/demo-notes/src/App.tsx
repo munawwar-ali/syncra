@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { SyncraClient } from '@syncra/client';
 import { SyncraProvider } from '@syncra/react';
 import { ChaosPanel } from './ChaosPanel.js';
+import { ServerView } from './ServerView.js';
 import { Editor } from './Editor.js';
 import { NotesList } from './NotesList.js';
 import { SyncBadge } from './SyncBadge.js';
@@ -171,6 +172,7 @@ function Workspace({ user, onLogout }: { user: DemoUser; onLogout: () => void })
           </main>
           <aside className="w-60 shrink-0 border-l border-line p-3">
             <ChaosPanel />
+            {noteId && <ServerView key={noteId} id={noteId} />}
           </aside>
         </div>
       </div>
