@@ -105,6 +105,23 @@ describe('offline editing (CLI-01, CLI-05, CLI-09)', () => {
       8000,
     );
   });
+
+  it('delivers unsent edits after a restart even if the document is never reopened', async () => {
+    const { mk, server } = env();
+    const identity = { tenantId: 't1', userId: 'u-adopt' };
+    const first = mk({ storage: 'indexeddb', identity });
+    server.acceptConnections = false;
+    first.doc('notes', 'orphan').text().insert(0, 'left behind');
+    await sleep(60);
+    await first.destroy();
+
+    mk({ storage: 'indexeddb', identity }); // no doc() call: nothing opens 'orphan'
+    server.acceptConnections = true;
+    await until(
+      () => (server.json('notes/orphan') as { text?: string }).text === 'left behind',
+      8000,
+    );
+  });
 });
 
 describe('reconnect (CLI-04)', () => {
