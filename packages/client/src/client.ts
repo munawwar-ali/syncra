@@ -213,6 +213,7 @@ class ClientImpl implements SyncraClient {
       this.onLeaderChange(true);
     }
     void this.pullPending();
+    void this.adoptUnsent();
   }
 
   private get leaderEngine(): SyncEngine | undefined {
@@ -328,6 +329,21 @@ class ClientImpl implements SyncraClient {
       const i = docKey.indexOf('/');
       const d = this.doc(docKey.slice(0, i), docKey.slice(i + 1));
       d.refs = 1; // held for the follower; released when no tab wants it
+    }
+  }
+
+  /**
+   * After a restart, documents that still have unsent edits are opened so the engine syncs them even when
+   * the UI never shows them again (e.g. a reload on a different screen).
+   * shortcut: held until destroy(); fine for the handful of documents with pending edits, release them
+   * as their outbox entries drain if that count ever gets large.
+   */
+  private async adoptUnsent(): Promise<void> {
+    const keys = new Set((await this.store.outbox()).map((e) => e.docKey));
+    for (const key of keys) {
+      if (this.destroyed || this.docs.has(key)) continue;
+      const i = key.indexOf('/');
+      this.doc(key.slice(0, i), key.slice(i + 1));
     }
   }
 

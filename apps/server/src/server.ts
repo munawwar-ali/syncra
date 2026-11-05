@@ -4,6 +4,7 @@ import type { Logger } from 'pino';
 import { buildApp } from './app.js';
 import type { Config } from './config.js';
 import { registerDemoRoutes } from './demo/routes.js';
+import { seedInspectionDemo } from './demo/seed-inspection.js';
 import { closeDeps, createDeps, type Deps } from './health.js';
 import { createLogger } from './observability/logger.js';
 import { createServices, type Services } from './services.js';
@@ -30,7 +31,12 @@ export async function startNode(
   const deps = opts.deps ?? createDeps(cfg);
   const services = createServices(cfg, deps, logger);
   const app = await buildApp(cfg, deps, logger, services);
-  if (cfg.DEMO_MODE) registerDemoRoutes(app, services);
+  if (cfg.DEMO_MODE) {
+    registerDemoRoutes(app, services);
+    void seedInspectionDemo(services).catch((err: unknown) => {
+      logger.warn({ err }, 'inspection demo seed failed');
+    });
+  }
 
   const gateway = new Gateway({
     svc: services.docs,

@@ -1,0 +1,33 @@
+:root {
+  --bg: #fff; --text: #111827; --muted: #4b5563; --line: #d1d5db; --primary: #1d4ed8; --surface: #f3f4f6;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0f172a; --text: #f1f5f9; --muted: #cbd5e1; --line: #334155; --primary: #60a5fa; --surface: #1e293b; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; font: 16px/1.5 system-ui, sans-serif; background: var(--bg); color: var(--text); }
+a { color: var(--primary); }
+h1 { font-size: 1.4rem; margin: .5rem 0; } h2 { font-size: 1.1rem; margin: 1rem 0 .25rem; }
+.muted { color: var(--muted); } .grow { flex: 1; } .sr { position: absolute; left: -9999px; }
+.page { max-width: 760px; margin: 0 auto; padding: 1rem; }
+.statusbar { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: .75rem; align-items: center;
+  padding: .5rem 1rem; background: var(--surface); border-bottom: 1px solid var(--line); font-size: .9rem; }
+.brand { font-weight: 700; text-decoration: none; }
+input, textarea, select, button { font: inherit; color: inherit; min-height: 44px; border: 1px solid var(--line);
+  border-radius: 6px; background: var(--bg); padding: .4rem .6rem; }
+input[type=search], textarea { width: 100%; } textarea { display: block; }
+button { cursor: pointer; } button:disabled { opacity: .5; cursor: not-allowed; }
+button[aria-pressed=true] { background: var(--primary); color: #fff; border-color: var(--primary); }
+.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.link { border: 0; background: none; min-height: 0; padding: 0; text-decoration: underline; color: var(--primary); }
+.row { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+.plain { list-style: none; padding: 0; } .plain li { padding: .35rem 0; }
+.check { display: grid; grid-template-columns: 1fr auto; gap: .25rem .5rem; border-bottom: 1px solid var(--line); }
+.check input { grid-column: 1 / -1; }
+.vlist { height: 60vh; overflow: auto; border: 1px solid var(--line); border-radius: 6px; }
+.vrow { position: absolute; top: 0; left: 0; width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; }
+.badge { font-size: .8rem; padding: .1rem .5rem; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); }
+.login { max-width: 360px; margin: 4rem auto; padding: 0 1rem; } .login label { display: block; margin-top: .75rem; }
+.radio { display: flex !important; gap: .5rem; align-items: center; } .radio input { min-height: 0; }
+.help { font-size: .85rem; }
