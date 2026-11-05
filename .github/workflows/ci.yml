@@ -23,6 +23,8 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm test:integration
+      - name: Packages install and run in a clean project (ESM, CJS, types)
+        run: bash scripts/pack-check.sh
       - name: OpenAPI is up to date
         run: pnpm --filter @syncra/server gen:openapi && git diff --exit-code docs/openapi.yaml
 
