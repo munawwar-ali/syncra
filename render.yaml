@@ -1,0 +1,23 @@
+# Render Blueprint: one free web service running the sync node (API + WebSocket) with migrations and
+# background jobs in the same process. Secrets are entered in the Render dashboard (sync: false).
+services:
+  - type: web
+    name: syncra-server
+    runtime: docker
+    plan: free
+    dockerfilePath: ./infra/docker/Dockerfile.server
+    dockerContext: .
+    healthCheckPath: /readyz
+    envVars:
+      - { key: NODE_ENV, value: production }
+      - { key: RUN_MIGRATIONS, value: "true" }
+      - { key: INLINE_JOBS, value: "true" }
+      - { key: DEMO_MODE, value: "true" }
+      - { key: TRUST_PROXY, value: "true" }
+      - { key: CONTROL_DATABASE_URL, sync: false }
+      - { key: SHARD_DATABASE_URLS, sync: false }
+      - { key: REDIS_URL, sync: false }
+      - { key: PUBLIC_URL, sync: false }
+      - { key: CORS_ORIGINS, sync: false }
+      - { key: JWT_ACCESS_SECRET, generateValue: true }
+      - { key: ENCRYPTION_KEY, sync: false }

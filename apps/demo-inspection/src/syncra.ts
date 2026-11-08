@@ -14,7 +14,7 @@ export const TEMPLATE_IDS = ['safety', 'electrical', 'environment'] as const;
 
 export function makeClient(s: Session): SyncraClient {
   return createClient({
-    url: location.origin,
+    url: (import.meta.env.VITE_SYNC_URL as string | undefined) ?? location.origin,
     publishableKey: 'pk_demo',
     identity: { tenantId: DEMO_TENANT_ID, userId: userId(s) },
     getToken: async () => {

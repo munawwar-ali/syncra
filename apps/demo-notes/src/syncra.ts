@@ -51,7 +51,7 @@ const demoUserId = (name: string): string =>
 
 export function makeClient(user: DemoUser): SyncraClient {
   return createClient({
-    url: location.origin,
+    url: (import.meta.env.VITE_SYNC_URL as string | undefined) ?? location.origin,
     publishableKey: 'pk_demo',
     identity: { tenantId: DEMO_TENANT_ID, userId: demoUserId(user.name) },
     getToken: async () => {
