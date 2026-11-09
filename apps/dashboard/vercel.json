@@ -3,7 +3,7 @@
   "buildCommand": "cd ../.. && pnpm turbo run build --filter=@syncra/dashboard...",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/v1/:path*", "destination": "https://syncra-server.onrender.com/v1/:path*" },
-    { "source": "/demo/:path*", "destination": "https://syncra-server.onrender.com/demo/:path*" }
+    { "source": "/v1/:path*", "destination": "https://syncra-rwi5.onrender.com/v1/:path*" },
+    { "source": "/demo/:path*", "destination": "https://syncra-rwi5.onrender.com/demo/:path*" }
   ]
 }
