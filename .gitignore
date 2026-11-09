@@ -12,3 +12,5 @@ playwright-report
 .claude/
 .syncra/
 docs/.vitepress/cache
+dist-site
+site

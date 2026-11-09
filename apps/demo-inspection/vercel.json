@@ -1,9 +1,0 @@
-{
-  "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
-  "buildCommand": "cd ../.. && pnpm turbo run build --filter=@syncra/demo-inspection...",
-  "outputDirectory": "dist",
-  "rewrites": [
-    { "source": "/v1/:path*", "destination": "https://syncra-rwi5.onrender.com/v1/:path*" },
-    { "source": "/demo/:path*", "destination": "https://syncra-rwi5.onrender.com/demo/:path*" }
-  ]
-}

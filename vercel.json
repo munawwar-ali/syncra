@@ -1,7 +1,7 @@
 {
-  "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
-  "buildCommand": "cd ../.. && pnpm turbo run build --filter=@syncra/dashboard...",
-  "outputDirectory": "dist",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "bash scripts/build-site.sh",
+  "outputDirectory": "site",
   "rewrites": [
     { "source": "/v1/:path*", "destination": "https://syncra-rwi5.onrender.com/v1/:path*" },
     { "source": "/demo/:path*", "destination": "https://syncra-rwi5.onrender.com/demo/:path*" }
