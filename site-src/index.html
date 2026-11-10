@@ -126,16 +126,37 @@
   .vid::after { content: ""; position: absolute; inset: 0; background: radial-gradient(55% 60% at 50% 0%, #cdf22b2e, transparent 70%); animation: glow 5s ease-in-out infinite alternate; }
   @keyframes grid { to { transform: translate(40px, 40px); } }
   @keyframes glow { to { opacity: .4; transform: translateX(12%); } }
-  .sc { position: absolute; inset: 0 0 3rem; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 1.5rem; opacity: 0; filter: blur(18px); transform: scale(.9); visibility: hidden; pointer-events: none;
-    transition: opacity .6s ease, filter .6s ease, transform .6s cubic-bezier(.2,.7,.2,1), visibility 0s .6s; }
-  .sc.on { opacity: 1; filter: blur(0); transform: none; visibility: visible; transition-delay: 0s; }
-  .sc.out { opacity: 0; filter: blur(18px); transform: scale(1.12); visibility: visible; }
+  .sc { position: absolute; inset: 0 0 3rem; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 1.5rem; opacity: 0; filter: blur(16px); transform: var(--tin, scale(.9)); clip-path: var(--cin, inset(0)); visibility: hidden; pointer-events: none;
+    transition: opacity .5s ease, filter .5s ease, transform .55s cubic-bezier(.7,0,.2,1), clip-path .55s cubic-bezier(.7,0,.2,1), visibility 0s .55s; }
+  .sc.on { opacity: 1; filter: blur(0); transform: none; clip-path: inset(0); visibility: visible; transition-delay: 0s; animation: kb 4s linear both; }
+  .sc.out { opacity: 0; filter: blur(16px); transform: var(--tout, scale(1.12)); clip-path: var(--cout, inset(0)); visibility: visible; }
+  .sc[data-t=zoom]  { --tin: scale(1.55); --tout: scale(.55); }
+  .sc[data-t=slide] { --tin: translateX(22%); --tout: translateX(-22%); }
+  .sc[data-t=flip]  { --tin: perspective(900px) rotateX(60deg) translateY(14%); --tout: perspective(900px) rotateX(-60deg) translateY(-14%); }
+  .sc[data-t=wipe]  { --tin: scale(1.06); --cin: inset(0 100% 0 0); --cout: inset(0 0 0 100%); }
+  .sc[data-t=rise]  { --tin: translateY(34%) scale(.9); --tout: translateY(-34%) scale(.9); }
+  @keyframes kb { from { scale: 1; } to { scale: 1.07; } }
+  .flash { position: absolute; inset: 0; z-index: 2; pointer-events: none; overflow: hidden; }
+  .flash::before { content: ""; position: absolute; top: -10%; bottom: -10%; left: -30%; width: 22%; background: var(--lime); opacity: 0; transform: skewX(-18deg); box-shadow: 2.4rem 0 0 #ffffff55; }
+  .flash.go::before { animation: sweep .6s cubic-bezier(.7,0,.3,1); }
+  @keyframes sweep { from { transform: skewX(-18deg) translateX(0); opacity: 1; } to { transform: skewX(-18deg) translateX(780%); opacity: 1; } }
+  .tick { position: absolute; left: 0; right: 0; bottom: 3rem; height: 1.5rem; overflow: hidden; z-index: 1; opacity: .22; font: 500 .72rem "JetBrains Mono", monospace; letter-spacing: .15em; color: var(--lime); white-space: nowrap; }
+  .tick div { display: inline-block; animation: tick 7s linear infinite; }
+  @keyframes tick { to { transform: translateX(-50%); } }
+  .pt { position: absolute; z-index: 0; top: 105%; left: var(--l); width: var(--s); height: var(--s); border-radius: 50%; background: var(--lime); opacity: .55; animation: up var(--t) linear var(--w) infinite; }
+  @keyframes up { to { top: -6%; opacity: 0; } }
   .sc h4 { font-size: clamp(1.1rem, 3.2vw, 2.4rem); font-weight: 800; letter-spacing: -.035em; line-height: 1.12; margin: 0 0 .8rem; }
   .sc h4 em { font-style: normal; color: var(--ink); background: var(--lime); padding: 0 .25em; border-radius: .2em; }
   .sc p { margin: .8rem 0 0; color: var(--muted-dark); font-size: clamp(.8rem, 1.6vw, 1.05rem); max-width: 34rem; }
   .sc p b { color: var(--ivory); }
   .sc .a { opacity: 0; }
-  .sc.on .a { animation: pop .5s var(--d, 0s) cubic-bezier(.2,.9,.25,1.15) both; }
+  .sc.on .a { animation: pop .45s var(--d, 0s) cubic-bezier(.2,.9,.25,1.15) both; }
+  .sc.on h4.a { animation: pop .45s var(--d, 0s) cubic-bezier(.2,.9,.25,1.15) both, trk .9s var(--d, 0s) ease-out both; }
+  @keyframes trk { from { letter-spacing: .09em; } }
+  .sc.on .chips .lg.a { animation: pop .45s var(--d, 0s) cubic-bezier(.2,.9,.25,1.15) both, bob2 1.6s calc(var(--d, 0s) + .5s) ease-in-out infinite alternate; }
+  @keyframes bob2 { to { translate: 0 -6px; } }
+  .sc.on .mini { animation: wob 1.8s ease-in-out infinite alternate; }
+  @keyframes wob { from { rotate: -1.2deg; } to { rotate: 1.2deg; translate: 0 -3px; } }
   .sc.out .a { opacity: 1; }
   @keyframes pop { from { opacity: 0; transform: translateY(26px) scale(.9); } to { opacity: 1; transform: none; } }
   .sc .chips { justify-content: center; }
@@ -149,7 +170,7 @@
   .sc.on .hub img { animation: bob 1.2s ease-in-out infinite alternate; }
   @keyframes bob { to { transform: translateY(-5px) rotate(8deg); } }
   .lane { position: relative; height: 3px; width: clamp(2rem, 9vw, 6rem); background: #333844; border-radius: 2px; }
-  .sc.on .lane i { position: absolute; top: -3px; left: 0; width: 9px; height: 9px; border-radius: 50%; background: var(--lime); border: 1px solid var(--ink); animation: dash .8s linear infinite; animation-delay: var(--d, 0s); }
+  .sc.on .lane i { position: absolute; top: -3px; left: 0; width: 9px; height: 9px; border-radius: 50%; background: var(--lime); border: 1px solid var(--ink); animation: dash .55s linear infinite; animation-delay: var(--d, 0s); }
   .sc.on .lane.rev i { animation-direction: reverse; }
   @keyframes dash { from { left: 0; opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } to { left: calc(100% - 9px); opacity: 0; } }
   .pg { width: clamp(2.5rem, 7vw, 4rem); height: clamp(2.2rem, 6vw, 3.4rem); border: 2px solid var(--lime); border-radius: 50% / 22%; margin-inline: auto; position: relative; }
@@ -257,7 +278,7 @@
     html { scroll-behavior: auto; }
     .rv { opacity: 1; transform: none; transition: none; }
     .flow { animation: none; }
-    .sc.on .lane i, .vid::before, .vid::after, .sc.on .cu, .sc.on .rip::before, .sc.on .rip::after, .sc.on .hub img { animation: none; }
+    .sc.on, .sc.on .chips .lg.a, .sc.on .mini, .tick div, .pt, .sc.on .lane i, .vid::before, .vid::after, .sc.on .cu, .sc.on .rip::before, .sc.on .rip::after, .sc.on .hub img { animation: none; }
   }
 </style>
 </head>
@@ -302,11 +323,11 @@
 
 <section id="story" class="dark">
   <div class="wrap">
-    <div class="eyebrow rv">The story in 25 seconds</div>
+    <div class="eyebrow rv">The story in 20 seconds</div>
     <h2 class="rv">Watch the whole flow.</h2>
     <p class="lead rv">From the problem to a merged document, as a motion explainer. Click the bar to jump to a scene.</p>
     <div class="vid rv" id="vid" role="region" aria-label="Animated explainer: the problem and how Syncra solves it">
-      <div class="sc on">
+      <div class="sc on" data-t="zoom">
         <span class="cu" style="--x:12%;--y:18%;--c:#CDF22B;--dx:40px;--dy:30px;--d:.3s"><span>Ana</span></span>
         <span class="cu" style="--x:78%;--y:24%;--c:#fff;--dx:-50px;--dy:40px;--d:.5s"><span>Raj</span></span>
         <span class="cu" style="--x:64%;--y:72%;--c:#CDF22B;--dx:-30px;--dy:-30px;--d:.7s"><span>Mia</span></span>
@@ -314,12 +335,12 @@
         <div class="chips"><span class="lg a" style="--d:.15s"><img src="/logos/googledocs.svg" alt="" />Google Docs</span><span class="lg a" style="--d:.3s"><img src="/logos/notion.svg" alt="" />Notion</span><span class="lg a" style="--d:.45s"><img src="/logos/figma.svg" alt="" />Figma</span></div>
         <p class="a" style="--d:.7s"><span class="type" style="--w:15em;--d:.9s">Even offline. Nothing lost.</span></p>
       </div>
-      <div class="sc">
+      <div class="sc" data-t="slide">
         <h4 class="a">Building it yourself? <em>Hard.</em></h4>
         <div class="chips"><span class="lg a" style="--d:.2s"><img src="/logos/firebase.svg" alt="" />Rent Firebase</span><span class="lg mk a" data-i="L" style="--d:.45s">Rent Liveblocks</span><span class="lg bad shake" style="--d:.7s">&#10005; Or lose data</span></div>
         <p class="a" style="--d:1.1s">So most teams <b>rent it</b>, or accept <b>losing work</b>.</p>
       </div>
-      <div class="sc">
+      <div class="sc" data-t="flip">
         <h4 class="a"><em>Syncra:</em> keep editing, no network.</h4>
         <div class="stage2 a" style="--d:.15s">
           <div class="mini"><small>Laptop · online</small>Roof <span class="e">inspected</span></div>
@@ -328,17 +349,17 @@
         </div>
         <p class="a" style="--d:.9s">Saved on the device first. Nothing waits for a server.</p>
       </div>
-      <div class="sc">
+      <div class="sc" data-t="wipe">
         <h4 class="a">Back online. Only the <em>delta</em> travels.</h4>
         <div class="stage2 a" style="--d:.1s">
           <div class="mini"><small>Laptop</small>Roof <span class="e">inspected</span></div>
           <div style="display:grid;gap:.9rem;justify-items:center"><div class="hub"><img src="/logo.svg" alt="" />Sync node</div><div class="lane"><i></i><i style="--d:.27s"></i><i style="--d:.54s"></i></div></div>
           <div class="mini"><small>Phone · reconnecting</small>Roof <span class="e">+ 3 photos</span></div>
         </div>
-        <div class="big a" style="--d:.7s">26x</div>
+        <div class="big a" id="cnt" style="--d:.6s">26x</div>
         <p class="a" style="--d:1s">less data on reconnect (measured in the benchmark)</p>
       </div>
-      <div class="sc">
+      <div class="sc" data-t="rise">
         <h4 class="a">Committed. Merged. <em>Broadcast.</em></h4>
         <div class="stage2 a" style="--d:.1s">
           <div class="mini"><small>Laptop</small>Roof <span class="e">inspected + 3 photos</span></div>
@@ -347,16 +368,19 @@
         </div>
         <p class="a" style="--d:.8s"><span class="q" style="font-size:1em">&#10003; merged &middot; 0 conflict dialogs</span></p>
       </div>
-      <div class="sc">
+      <div class="sc" data-t="slide">
         <img class="logo-big a" src="/logo.svg" alt="" />
         <h4 class="a" style="--d:.15s;margin-top:.8rem">Self-host it. <em>Own your data.</em></h4>
         <div class="chips"><span class="lg a" style="--d:.35s">Yjs CRDTs</span><span class="lg a" style="--d:.5s">Docker Compose</span><span class="lg a" style="--d:.65s">Dashboard</span><span class="lg a" style="--d:.8s">Open source</span></div>
         <span class="cta-pill" style="--d:1s">Get started &rarr;</span>
       </div>
+<i class="pt" style="--l:6%;--s:5px;--t:5s;--w:-1s"></i><i class="pt" style="--l:16%;--s:3px;--t:4s;--w:-3s"></i><i class="pt" style="--l:27%;--s:6px;--t:6s;--w:-2s"></i><i class="pt" style="--l:38%;--s:4px;--t:4.5s;--w:-0s"></i><i class="pt" style="--l:49%;--s:5px;--t:5.5s;--w:-4s"></i><i class="pt" style="--l:58%;--s:3px;--t:4s;--w:-2s"></i><i class="pt" style="--l:69%;--s:6px;--t:6s;--w:-5s"></i><i class="pt" style="--l:79%;--s:4px;--t:4.5s;--w:-1s"></i><i class="pt" style="--l:88%;--s:5px;--t:5s;--w:-3s"></i><i class="pt" style="--l:95%;--s:3px;--t:4s;--w:-0s"></i>
+      <div class="flash" id="fl"></div>
+      <div class="tick" aria-hidden="true"><div>OFFLINE &#10022; SYNC &#10022; MERGE &#10022; YJS &#10022; SELF-HOST &#10022; OFFLINE &#10022; SYNC &#10022; MERGE &#10022; YJS &#10022; SELF-HOST &#10022; OFFLINE &#10022; SYNC &#10022; MERGE &#10022; YJS &#10022; SELF-HOST &#10022; OFFLINE &#10022; SYNC &#10022; MERGE &#10022; YJS &#10022; SELF-HOST &#10022; OFFLINE &#10022; SYNC &#10022; MERGE &#10022; YJS &#10022; SELF-HOST &#10022; OFFLINE &#10022; SYNC &#10022; MERGE &#10022; YJS &#10022; SELF-HOST &#10022; </div></div>
       <div class="vc">
         <button id="vp" aria-label="Pause">&#10074;&#10074;</button>
-        <div class="tr" id="vt" role="slider" aria-label="Seek" aria-valuemin="0" aria-valuemax="25" tabindex="0"><div class="fill" id="vf"></div></div>
-        <span class="tm" id="vm">0:00 / 0:25</span>
+        <div class="tr" id="vt" role="slider" aria-label="Seek" aria-valuemin="0" aria-valuemax="20" tabindex="0"><div class="fill" id="vf"></div></div>
+        <span class="tm" id="vm">0:00 / 0:20</span>
       </div>
     </div>
     <div class="vcap rv"><span><b>1</b> Problem</span><span><b>2</b> Why it's hard</span><span><b>3</b> Offline edits</span><span><b>4</b> Reconnect</span><span><b>5</b> Merge</span><span><b>6</b> Self-host</span></div>
@@ -601,14 +625,18 @@
 
   /* ---- motion explainer ---- */
   const vid = $('#vid'), scs = [...vid.querySelectorAll('.sc')], vp = $('#vp'), vf = $('#vf'), vm = $('#vm'), vt = $('#vt');
-  const caps = [...document.querySelectorAll('.vcap span')];
-  const dur = [4, 4, 4.5, 4.5, 4.5, 3.5], total = dur.reduce((a, b) => a + b, 0);
+  const caps = [...document.querySelectorAll('.vcap span')], fl = $('#fl'), cnt = $('#cnt');
+  const dur = [3.2, 3.2, 3.6, 3.6, 3.6, 3], total = dur.reduce((a, b) => a + b, 0);
   const starts = dur.map((_, i) => dur.slice(0, i).reduce((a, b) => a + b, 0));
   let vtm = 0, play = false, vlast = 0, vseen = false, sn = -1, prev = -1;
   const fmt = (x) => '0:' + String(Math.floor(x)).padStart(2, '0');
   const vrender = () => {
     const i = starts.findLastIndex((st) => vtm >= st);
-    if (i !== sn) { prev = sn; sn = i; }
+    if (i !== sn) {
+      prev = sn; sn = i;
+      if (prev !== -1) { fl.classList.remove('go'); void fl.offsetWidth; fl.classList.add('go'); }
+      if (i === 3) { const t0 = performance.now() + 600; cnt.textContent = '1x'; (function f(n) { const k = Math.min(1, Math.max(0, (n - t0) / 900)); cnt.textContent = Math.round(1 + 25 * k) + 'x'; if (k < 1 && sn === 3) requestAnimationFrame(f); })(performance.now()); }
+    }
     scs.forEach((c, k) => { c.classList.toggle('on', k === i); c.classList.toggle('out', k === prev && k !== i); });
     caps.forEach((c, k) => c.classList.toggle('act', k === i));
     vf.style.width = (vtm / total * 100) + '%'; vm.textContent = fmt(vtm) + ' / ' + fmt(total);
