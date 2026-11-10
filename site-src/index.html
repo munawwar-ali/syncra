@@ -215,7 +215,7 @@
   .lenis.lenis-stopped { overflow: hidden; }
 
   /* ---- pinned chapters: one stage, the scene changes as you scroll ---- */
-  .chap { position: relative; height: 560vh; padding: 0; background: transparent; }
+  .chap { position: relative; height: 600vh; padding: 0; background: transparent; }
   .pin { position: sticky; top: 0; height: 100vh; overflow: hidden; background: transparent; color: var(--cfg, var(--ivory)); perspective: 1100px; perspective-origin: 50% 55%; }
   .pin::before { content: ""; position: absolute; inset: 0; z-index: 0; background: var(--cbg, var(--ivory)); opacity: var(--bga, 0); }
   .ch-top { position: absolute; z-index: 3; inset: 1.4rem 1.5rem auto; display: flex; justify-content: space-between; font: 500 .8rem "JetBrains Mono", monospace; text-transform: uppercase; letter-spacing: .1em; }
@@ -694,8 +694,8 @@
   const heads = [...document.querySelectorAll('.ch-h')], chNum = $('#chNum');
   const NAMES = ['Ana · laptop', 'Raj · phone', 'Mia · tablet', 'Sam · laptop', 'Lee · phone', 'Zoe · tablet', 'Kai · laptop', 'Noor · phone'];
   const CHIP = ['online', 'offline', 'syncing', 'merged ✓', 'yours'];
-  const BG = ['#FAF8F3', '#08090B', '#CDF22B', '#08090B', '#FAF8F3'];
-  const FG = ['#08090B', '#FAF8F3', '#08090B', '#FAF8F3', '#08090B'];
+  const BG = ['#FAF8F3', '#08090B', '#CDF22B', '#FAF8F3', '#08090B'];
+  const FG = ['#08090B', '#FAF8F3', '#08090B', '#08090B', '#FAF8F3'];
   const cards = NAMES.map((n, i) => {
     const c = document.createElement('div');
     c.className = 'c3';
@@ -721,23 +721,28 @@
   let lastCh = -1;
   const chapters = () => {
     const r = how.getBoundingClientRect(), vh = innerHeight;
-    const prog = clamp(-r.top / Math.max(1, r.height - vh));
+    const L = Math.max(1, r.height - vh), tail = vh * .45;
+    const prog = clamp(-r.top / (L - tail)), exit = clamp((-r.top - (L - tail)) / tail);
+    // 0 -> 1 while the section scrolls into view, so the first chapter eases in instead of popping
+    const pre = sm(clamp((vh * .95 - r.top) / (vh * .6)));
     const pp = prog * 4, k = Math.min(3, Math.floor(pp)), t = sm(clamp((pp - k - .22) / .56));
     const U = clamp(Math.min(innerWidth / 1100, vh / 700), .45, 1.3);
-    pin.style.setProperty('--cbg', mixc(BG[k], BG[k + 1], t));
+    pin.style.setProperty('--cbg', k === 0 ? BG[1] : mixc(BG[k], BG[k + 1], t));
     pin.style.setProperty('--cfg', mixc(FG[k], FG[k + 1], t));
     pin.style.setProperty('--bga', k === 0 ? t : 1);
     cards.forEach((c, i) => {
       const A = poses[k](i, U, pp), B = poses[k + 1](i, U, pp), m = (f) => mix(A[f], B[f], t);
-      c.el.style.transform = 'translate3d(' + m('x') + 'px,' + m('y') + 'px,' + m('z') + 'px) rotateX(' + m('rx') + 'deg) rotateY(' + m('ry') + 'deg) rotateZ(' + m('rz') + 'deg) scale(' + m('s') + ')';
-      c.el.style.opacity = m('o');
+      c.el.style.transform = 'translate3d(' + m('x') + 'px,' + (m('y') + (1 - pre) * 140 + exit * 90) + 'px,' + m('z') + 'px) rotateX(' + m('rx') + 'deg) rotateY(' + m('ry') + 'deg) rotateZ(' + m('rz') + 'deg) scale(' + m('s') + ')';
+      c.el.style.opacity = m('o') * pre * (1 - exit);
     });
     heads.forEach((h, n) => {
       const d = pp - n, ad = Math.abs(d), v = clamp(1 - (ad - .28) / .2);
-      h.style.opacity = v;
-      h.style.transform = 'translateY(' + (d * -70).toFixed(1) + 'px) scale(' + (1 - Math.min(ad, .6) * .08).toFixed(3) + ')';
-      h.style.filter = 'blur(' + (clamp(ad - .28, 0, .5) * 26).toFixed(1) + 'px)';
+      h.style.opacity = v * (n === 0 ? pre : 1) * (n === heads.length - 1 ? 1 - exit * .9 : 1);
+      h.style.transform = 'translateY(' + (d * -70 + (n === 0 ? (1 - pre) * 90 : 0) - exit * 50).toFixed(1) + 'px) scale(' + (1 - Math.min(ad, .6) * .08).toFixed(3) + ')';
+      h.style.filter = 'blur(' + (clamp(ad - .28, 0, .5) * 26 + exit * 8 + (n === 0 ? (1 - pre) * 12 : 0)).toFixed(1) + 'px)';
     });
+    $('#rail').style.opacity = pre * (1 - exit);
+    document.querySelector('.ch-top').style.opacity = pre * (1 - exit);
     const near = Math.round(pp);
     if (near !== lastCh) {
       lastCh = near;
