@@ -8,7 +8,7 @@
 <link rel="icon" href="/logo.svg" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <style>
   :root {
     --ivory: #FAF8F3; --ink: #08090B; --lime: #CDF22B;
@@ -17,158 +17,527 @@
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
-  body { margin: 0; background: var(--ivory); color: var(--ink); font: 16px/1.6 Inter, system-ui, sans-serif; }
+  body { margin: 0; background: var(--ivory); color: var(--ink); font: 16px/1.6 Inter, system-ui, sans-serif; overflow-x: hidden; }
   a { color: inherit; text-decoration: none; }
-  .wrap { max-width: 68rem; margin: 0 auto; padding: 0 1rem; }
+  .wrap { max-width: 70rem; margin: 0 auto; padding: 0 1rem; }
   code, .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+  img { max-width: 100%; display: block; }
 
-  /* nav */
-  nav { display: flex; align-items: center; gap: 1.5rem; padding: 1rem 0; }
+  /* ---- background canvas, scroll bar, cursor ---- */
+  #bg { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
+  #bar { position: fixed; top: 0; left: 0; height: 3px; width: 100%; background: var(--lime); transform-origin: 0 50%; transform: scaleX(0); z-index: 100; border-bottom: 1px solid var(--ink); }
+  html.has-cursor, html.has-cursor * { cursor: none !important; }
+  .cur { position: fixed; left: 0; top: 0; pointer-events: none; z-index: 9999; opacity: 0; transition: opacity .2s; }
+  html.has-cursor .cur { opacity: 1; }
+  .cur-dot { width: 8px; height: 8px; margin: -4px; border-radius: 50%; background: var(--lime); border: 1.5px solid var(--ink); }
+  .cur-ring { width: 36px; height: 36px; margin: -18px; border-radius: 50%; border: 1.5px solid #fff; mix-blend-mode: difference;
+    transition: width .2s, height .2s, margin .2s, background .2s; }
+  .cur-ring.hover { width: 68px; height: 68px; margin: -34px; background: #fff; }
+  .cur-ring.down { width: 24px; height: 24px; margin: -12px; }
+  .cur-ring.text { width: 4px; height: 28px; margin: -14px -2px; border-radius: 2px; background: #fff; }
+
+  /* ---- nav ---- */
+  nav { display: flex; align-items: center; gap: 1.5rem; padding: 1rem 0; position: relative; z-index: 5; }
   .brand { display: flex; align-items: center; gap: .6rem; font-weight: 700; font-size: 1.2rem; letter-spacing: -.02em; }
   .brand img { width: 30px; height: 30px; }
   nav .links { margin-left: auto; display: flex; align-items: center; gap: 1.25rem; color: var(--muted); font-size: .95rem; }
   nav .links a:hover { color: var(--ink); }
-  .btn { display: inline-block; padding: .65rem 1.15rem; border-radius: .5rem; font-weight: 600; border: 1px solid var(--ink); }
-  .btn.primary { background: var(--lime); border-color: var(--ink); color: var(--ink); }
-  .btn:hover { filter: brightness(1.1); }
-  .btn:focus-visible, a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .btn { display: inline-block; padding: .65rem 1.15rem; border-radius: .5rem; font-weight: 600; border: 1px solid var(--ink); transition: transform .15s, box-shadow .15s; }
+  .btn.primary { background: var(--lime); color: var(--ink); }
+  .btn:hover { transform: translate(-2px, -2px); box-shadow: 3px 3px 0 var(--ink); }
+  .btn.on-dark { border-color: var(--ivory); color: var(--ivory); }
+  .btn.on-dark.primary { color: var(--ink); }
+  .btn.on-dark:hover { box-shadow: 3px 3px 0 var(--lime); }
+  a:focus-visible, .btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 
-  /* hero */
-  .hero { text-align: center; padding: 5rem 0 3.5rem; position: relative; }
-  .hero::before { content: ""; position: absolute; inset: -4rem 0 auto; height: 28rem; z-index: -1;
-    background: radial-gradient(36rem 16rem at 50% 30%, #cdf22b40, transparent 70%); }
-  .pill { display: inline-block; padding: .25rem .8rem; border: 1px solid var(--line); border-radius: 99px; color: var(--muted); font-size: .85rem; margin-bottom: 1.5rem; }
-  h1 { font-size: clamp(2.4rem, 6vw, 4rem); line-height: 1.08; letter-spacing: -.035em; margin: 0 0 1.25rem; }
-  .grad { background: linear-gradient(transparent 58%, var(--lime) 58% 92%, transparent 92%); padding: 0 .1em; }
+  /* ---- scroll reveal ---- */
+  .rv { opacity: 0; transform: translateY(32px); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.7,.2,1); transition-delay: var(--d, 0s); }
+  .rv.in { opacity: 1; transform: none; }
+
+  /* ---- hero ---- */
+  .hero { text-align: center; padding: 4.5rem 0 3rem; position: relative; }
+  .pill { display: inline-block; padding: .25rem .8rem; border: 1px solid var(--ink); border-radius: 99px; font-size: .85rem; margin-bottom: 1.5rem; background: var(--ivory); }
+  h1 { font-size: clamp(2.5rem, 6.5vw, 4.5rem); line-height: 1.05; letter-spacing: -.04em; margin: 0 0 1.25rem; font-weight: 800; }
+  .hl { background: linear-gradient(transparent 58%, var(--lime) 58% 92%, transparent 92%); padding: 0 .1em; }
   .sub { color: var(--muted); font-size: 1.2rem; max-width: 40rem; margin: 0 auto 2rem; }
   .cta { display: flex; flex-wrap: wrap; gap: .75rem; justify-content: center; }
   .install { display: inline-block; margin-top: 1.75rem; padding: .6rem 1rem; background: var(--ink); border-radius: .5rem; color: var(--muted-dark); font-size: .9rem; }
   .install b { color: var(--lime); font-weight: 500; }
-
-  /* sync visual: two windows converging */
   .devices { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; max-width: 46rem; margin: 3rem auto 0; text-align: left; }
-  .dev { background: var(--ink); color: var(--ivory); border-radius: .75rem; padding: 1rem; }
+  .dev { background: var(--ink); color: var(--ivory); border-radius: .75rem; padding: 1rem; box-shadow: 6px 6px 0 var(--lime); }
   .dev header { display: flex; justify-content: space-between; font-size: .8rem; color: var(--muted-dark); margin-bottom: .6rem; }
+  .dev p { margin: 0; font-size: .9rem; min-height: 3em; }
+  .dev .edit { color: var(--lime); }
   .st { display: inline-flex; align-items: center; gap: .35rem; }
   .st::before { content: ""; width: .5rem; height: .5rem; border-radius: 50%; background: var(--lime); }
-  .st.off { color: var(--muted-dark); } .st.off::before { background: var(--muted-dark); }
-  .dev p { margin: 0; font-size: .9rem; }
-  .dev .edit { color: var(--lime); }
+  .st.off::before { background: var(--muted-dark); }
 
-  section { padding: 3.5rem 0; }
-  h2 { font-size: clamp(1.7rem, 3.5vw, 2.4rem); letter-spacing: -.03em; line-height: 1.15; margin: 0 0 .75rem; }
-  .lead { color: var(--muted); max-width: 38rem; margin: 0 0 2rem; }
-  .proof { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem 2rem; color: var(--muted); font-size: .95rem; padding: 1.5rem 0; border-block: 1px solid var(--line); }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1rem; }
-  .card { background: #fff; border: 1px solid var(--line); border-radius: .75rem; padding: 1.4rem; transition: border-color .15s; }
-  a.card:hover { border-color: var(--ink); }
-  .card h3 { margin: 0 0 .4rem; font-size: 1.1rem; }
+  /* ---- section basics ---- */
+  section { padding: 4.5rem 0; }
+  .dark { background: var(--ink); color: var(--ivory); }
+  .eyebrow { font: 500 .8rem "JetBrains Mono", monospace; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: .75rem; }
+  .dark .eyebrow { color: var(--lime); }
+  h2 { font-size: clamp(1.8rem, 4vw, 2.7rem); letter-spacing: -.035em; line-height: 1.12; margin: 0 0 .9rem; font-weight: 800; }
+  .lead { color: var(--muted); max-width: 40rem; margin: 0 0 2.25rem; font-size: 1.08rem; }
+  .dark .lead { color: var(--muted-dark); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(15.5rem, 1fr)); gap: 1rem; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: .75rem; padding: 1.4rem; transition: border-color .15s, transform .2s; }
+  .card:hover { border-color: var(--ink); transform: translateY(-3px); }
+  .card h3 { margin: 0 0 .4rem; font-size: 1.08rem; }
   .card p { margin: 0; color: var(--muted); font-size: .95rem; }
-  .card small { display: block; margin-top: .8rem; font-weight: 600; }
+  .dark .card { background: var(--ink-2); border-color: #262a33; }
+  .dark .card:hover { border-color: var(--lime); }
+  .dark .card p { color: var(--muted-dark); }
+  .num { display: inline-grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; background: var(--lime); color: var(--ink); font-weight: 700; margin-bottom: .8rem; }
 
-  pre { margin: 0; padding: 1.1rem 1.25rem; background: var(--ink); color: var(--ivory); border-radius: .75rem; overflow-x: auto; font-size: .88rem; line-height: 1.7; }
-  pre .c { color: var(--muted-dark); }
+  /* ---- scroll-driven marquee ---- */
+  .strip { border-block: 1px solid var(--ink); background: var(--lime); overflow: hidden; padding: .9rem 0; }
+  .strip div { display: flex; gap: 2.5rem; white-space: nowrap; width: max-content; font-weight: 800; font-size: clamp(1.4rem, 3vw, 2rem); letter-spacing: -.03em; will-change: transform; }
+  .strip span::after { content: "✦"; margin-left: 2.5rem; font-weight: 400; }
 
-  .arch { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .75rem; }
-  .node { padding: .8rem 1.2rem; background: #fff; border: 1px solid var(--ink); border-radius: .6rem; text-align: center; font-size: .9rem; }
-  .node small { display: block; color: var(--muted); }
-  .arrow { color: var(--muted); }
+  /* ---- comparison table ---- */
+  .tbl { border: 1px solid var(--ink); border-radius: .75rem; overflow: hidden; background: #fff; }
+  .row { display: grid; grid-template-columns: 1.1fr 1.2fr 1.6fr; gap: 1rem; padding: .95rem 1.2rem; border-top: 1px solid var(--line); font-size: .93rem; align-items: start; }
+  .row:first-child { border-top: 0; background: var(--ink); color: var(--ivory); font: 500 .78rem "JetBrains Mono", monospace; text-transform: uppercase; letter-spacing: .08em; }
+  .row b { font-weight: 700; }
+  .row.us { background: var(--lime); border-top: 1px solid var(--ink); }
+  .row span:nth-child(2) { color: var(--muted); }
+  .row.us span:nth-child(2) { color: var(--ink); }
+  .note { color: var(--muted); font-size: .88rem; margin-top: 1rem; }
 
-  .final { text-align: center; background: var(--ink); color: var(--ivory); border-radius: 1rem; padding: 3.5rem 1rem; margin: 2rem 0 3rem; }
-  footer { border-top: 1px solid var(--line); padding: 1.75rem 0 2.5rem; color: var(--muted); font-size: .9rem; display: flex; flex-wrap: wrap; gap: 1rem 2rem; }
+  /* ---- sticky steps ---- */
+  .steps { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: start; }
+  .step { min-height: 62vh; display: flex; flex-direction: column; justify-content: center; opacity: .3; transition: opacity .3s; }
+  .step.on { opacity: 1; }
+  .step h3 { font-size: 1.5rem; margin: 0 0 .5rem; letter-spacing: -.02em; }
+  .step p { color: var(--muted-dark); margin: 0; }
+  .stage { position: sticky; top: 18vh; background: var(--ink-2); border: 1px solid #262a33; border-radius: 1rem; padding: 1.5rem; min-height: 15rem; }
+  .stage .tag { font: 500 .78rem "JetBrains Mono", monospace; color: var(--lime); margin-bottom: 1rem; }
+  .stage .big { font-size: 1.35rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.35; }
+  .stage .big em { font-style: normal; background: var(--lime); color: var(--ink); padding: 0 .2em; border-radius: .2em; }
+  .stage .mono { color: var(--muted-dark); font-size: .85rem; margin-top: 1rem; }
+
+  /* ---- screenshots ---- */
+  .shots { display: grid; grid-template-columns: 1.5fr 1fr; gap: 2rem; align-items: start; }
+  .frame { display: block; border: 1px solid var(--ink); border-radius: .75rem; overflow: hidden; background: var(--ink); box-shadow: 8px 8px 0 var(--lime); transition: box-shadow .2s; }
+  .frame:hover { box-shadow: 12px 12px 0 var(--lime); }
+  .frame .chrome { display: flex; gap: .4rem; padding: .55rem .8rem; background: var(--ink-2); }
+  .frame .chrome i { width: .6rem; height: .6rem; border-radius: 50%; background: #3a3f4a; }
+  .frame img { width: 100%; }
+  .frame.phone img { height: 28rem; object-fit: cover; object-position: top; }
+  .cap { margin: 1.1rem 0 0; font-size: .95rem; }
+  .cap b { display: block; font-size: 1.05rem; }
+  .cap span { color: var(--muted); }
+  .shots .wide { grid-column: 1 / -1; max-width: 48rem; margin: 0 auto; }
+
+  /* ---- code ---- */
+  pre { margin: 0; padding: 1.2rem 1.4rem; background: var(--ink); color: var(--ivory); border-radius: .75rem; overflow-x: auto; font-size: .85rem; line-height: 1.7; }
+  pre .c { color: var(--muted-dark); } pre .k { color: var(--lime); }
+  .two { display: grid; grid-template-columns: 1fr 1.3fr; gap: 2.5rem; align-items: center; }
+
+  /* ---- architecture ---- */
+  .arch { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: .75rem; align-items: stretch; }
+  .node { padding: .9rem 1rem; background: var(--ink-2); border: 1px solid #262a33; border-radius: .6rem; text-align: center; font-size: .9rem; position: relative; }
+  .node small { display: block; color: var(--muted-dark); }
+  .node.hot { border-color: var(--lime); }
+  .flow { height: 3px; margin: 1.5rem 0; background: repeating-linear-gradient(90deg, var(--lime) 0 14px, transparent 14px 28px); background-size: 28px 3px; animation: flow 1s linear infinite; border-radius: 2px; }
+  @keyframes flow { to { background-position: 28px 0; } }
+
+  /* ---- stats ---- */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 1rem; }
+  .stat { border: 1px solid var(--ink); border-radius: .75rem; padding: 1.3rem; background: #fff; }
+  .stat b { display: block; font-size: 2.3rem; letter-spacing: -.04em; line-height: 1.1; font-weight: 800; }
+  .stat span { color: var(--muted); font-size: .9rem; }
+  .limits { margin-top: 1.5rem; padding: 1.2rem 1.4rem; border: 1px dashed var(--ink); border-radius: .75rem; background: var(--ivory); }
+  .limits h3 { margin: 0 0 .5rem; font-size: 1rem; }
+  .limits ul { margin: 0; padding-left: 1.2rem; color: var(--muted); font-size: .93rem; }
+
+  .final { text-align: center; }
+  .final h2 { font-size: clamp(2rem, 5vw, 3.4rem); }
+  .final .lead { margin-inline: auto; }
+  footer { background: var(--ink); color: var(--muted-dark); border-top: 1px solid #262a33; padding: 1.75rem 0 2.5rem; font-size: .9rem; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 1rem 2rem; align-items: center; }
+  footer .brand { color: var(--ivory); font-size: 1rem; }
   footer .r { margin-left: auto; display: flex; gap: 1.25rem; }
+  footer a:hover { color: var(--lime); }
 
-  @media (max-width: 640px) {
+  @media (max-width: 760px) {
     nav .links a:not(.btn) { display: none; }
-    .devices { grid-template-columns: 1fr; }
+    .devices, .steps, .shots, .two { grid-template-columns: 1fr; }
+    .row { grid-template-columns: 1fr; gap: .2rem; }
+    .row:first-child { display: none; }
+    .stage { position: static; }
+    .step { min-height: 0; opacity: 1; padding: 1.2rem 0; }
     footer .r { margin-left: 0; }
   }
-  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .rv { opacity: 1; transform: none; transition: none; }
+    .flow { animation: none; }
+  }
 </style>
 </head>
 <body>
+<canvas id="bg" aria-hidden="true"></canvas>
+<div id="bar" aria-hidden="true"></div>
+<div class="cur cur-ring" id="ring" aria-hidden="true"></div>
+<div class="cur cur-dot" id="dot" aria-hidden="true"></div>
+
 <div class="wrap">
   <nav aria-label="Main">
     <a class="brand" href="/"><img src="/logo.svg" alt="" />syncra</a>
     <div class="links">
+      <a href="#problem">Why</a>
+      <a href="#landscape">Compare</a>
+      <a href="#features">Features</a>
       <a href="/docs/">Docs</a>
-      <a href="/notes/">Demo</a>
-      <a href="/dashboard/">Dashboard</a>
-      <a href="https://github.com/munawwar-ali/Syncra">GitHub</a>
+      <a href="https://github.com/munawwar-ali/syncra">GitHub</a>
       <a class="btn primary" href="/docs/getting-started.html">Get started</a>
     </div>
   </nav>
 
   <header class="hero">
-    <span class="pill">Open source · Built on Yjs</span>
-    <h1>Offline-first sync,<br /><span class="grad">without the lock-in.</span></h1>
-    <p class="sub">Syncra is a self-hostable sync engine: a server, a client SDK and a dashboard. Your users keep working offline, and every device converges when it reconnects.</p>
-    <div class="cta">
+    <span class="pill rv">Open source · Apache-2.0 · Built on Yjs</span>
+    <h1 class="rv" style="--d:.08s">Offline-first sync,<br /><span class="hl">without the lock-in.</span></h1>
+    <p class="sub rv" style="--d:.16s">Syncra is a self-hostable sync engine: a server, a client SDK and a dashboard. Your app keeps working with no network, and merges cleanly when it comes back.</p>
+    <div class="cta rv" style="--d:.24s">
       <a class="btn primary" href="/docs/getting-started.html">Get started</a>
       <a class="btn" href="/notes/">Try the live demo</a>
     </div>
-    <div class="install mono"><b>$</b> pnpm add @syncra/client</div>
+    <div class="install mono rv" style="--d:.3s"><b>$</b> git clone https://github.com/munawwar-ali/syncra &amp;&amp; pnpm install &amp;&amp; pnpm dev</div>
 
-    <div class="devices" aria-label="Two devices editing the same note">
-      <div class="dev"><header><span>Laptop</span><span class="st">online</span></header><p>Site visit notes: roof <span class="edit">inspected, no leaks</span></p></div>
-      <div class="dev"><header><span>Phone</span><span class="st off">offline · syncs later</span></header><p>Site visit notes: roof inspected, no leaks <span class="edit">+ photos queued</span></p></div>
+    <div class="devices" aria-label="Two devices editing the same note" data-speed=".04">
+      <div class="dev"><header><span>Laptop</span><span class="st">online</span></header><p id="d1"></p></div>
+      <div class="dev"><header><span>Phone</span><span class="st" id="phSt">offline</span></header><p id="d2"></p></div>
     </div>
   </header>
-
-  <div class="proof"><span>Self-hostable</span><span>Yjs CRDTs</span><span>Postgres</span><span>TypeScript SDK</span><span>Open source</span></div>
-
-  <section id="features">
-    <h2>Everything between your app and your database</h2>
-    <p class="lead">Local-first apps need more than a CRDT. Syncra ships the parts around it.</p>
-    <div class="grid">
-      <div class="card"><h3>Offline-first</h3><p>Edits are applied locally and queued. Conflicts merge automatically with Yjs, so there is no custom merge code to write.</p></div>
-      <div class="card"><h3>Self-host anywhere</h3><p>Run the whole stack with Docker Compose on your own infrastructure. Your data stays in your Postgres.</p></div>
-      <div class="card"><h3>Dashboard included</h3><p>API keys, usage, a document inspector, webhooks and an audit log, without building an admin tool first.</p></div>
-    </div>
-  </section>
-
-  <section id="code">
-    <h2>Up and running in minutes</h2>
-    <p class="lead">Start the stack locally, then point the SDK at it.</p>
-    <pre><code><span class="c"># run the server and its dependencies</span>
-docker compose -f infra/compose/docker-compose.yml up
-
-<span class="c"># add the SDK to your app</span>
-pnpm add @syncra/client @syncra/react</code></pre>
-  </section>
-
-  <section id="demos">
-    <h2>See it work</h2>
-    <p class="lead">Open a demo in two windows, go offline in one, and watch them converge.</p>
-    <div class="grid">
-      <a class="card" href="/notes/"><h3>Notes</h3><p>Collaborative editing that keeps working offline.</p><small>Open demo →</small></a>
-      <a class="card" href="/inspection/"><h3>Field inspection</h3><p>An offline-first PWA with 5,000 sites.</p><small>Open demo →</small></a>
-      <a class="card" href="/dashboard/"><h3>Admin dashboard</h3><p>Keys, usage, document inspector and audit log.</p><small>Open dashboard →</small></a>
-    </div>
-  </section>
-
-  <section id="architecture">
-    <h2>How it fits together</h2>
-    <p class="lead">Clients sync over WebSocket; the server persists to Postgres and fans out to other nodes.</p>
-    <div class="arch" role="img" aria-label="Client SDK connects to the Syncra server, which stores data in Postgres">
-      <div class="node">Your app<small>@syncra/client</small></div><span class="arrow">⇄</span>
-      <div class="node">Syncra server<small>auth · sharding · webhooks</small></div><span class="arrow">→</span>
-      <div class="node">Postgres<small>your data</small></div>
-    </div>
-    <p style="text-align:center;margin-top:1.5rem"><a class="grad" href="/docs/architecture.html">Read the architecture →</a></p>
-  </section>
-
-  <div class="final">
-    <h2>Build the app. Skip the sync plumbing.</h2>
-    <p class="lead" style="margin-inline:auto;color:var(--muted-dark)">Free and self-hostable. Read the docs or try the demo.</p>
-    <div class="cta"><a class="btn primary" href="/docs/getting-started.html">Get started</a><a class="btn" style="border-color:var(--ivory)" href="/docs/">Read the docs</a></div>
-  </div>
-
-  <footer>
-    <span class="brand" style="font-size:1rem"><img src="/logo.svg" alt="" width="22" height="22" />syncra</span>
-    <span>Free hosting: the demo server sleeps when idle, so the first request can take up to a minute.</span>
-    <span class="r"><a href="/docs/">Docs</a><a href="https://github.com/munawwar-ali/Syncra">GitHub</a></span>
-  </footer>
 </div>
+
+<div class="strip" aria-hidden="true"><div id="marq"><span>Offline-first</span><span>Yjs CRDTs</span><span>Self-hostable</span><span>Multi-tenant</span><span>Delta sync</span><span>Audit log</span><span>Offline-first</span><span>Yjs CRDTs</span><span>Self-hostable</span><span>Multi-tenant</span><span>Delta sync</span><span>Audit log</span></div></div>
+
+<section id="problem" class="dark">
+  <div class="wrap">
+    <div class="eyebrow rv">The problem</div>
+    <h2 class="rv">Most apps assume the network is always there.</h2>
+    <p class="lead rv">Real users work in basements, on planes, on building sites and on bad Wi-Fi. When the connection drops, the app either blocks them or quietly loses what they did. Fixing that properly is hard, and it is the same hard work every team repeats.</p>
+    <div class="grid">
+      <div class="card rv"><span class="num">1</span><h3>Work gets lost</h3><p>Forms fail to save, edits vanish on reconnect, and users learn not to trust the app. Offline support is usually bolted on late and never finished.</p></div>
+      <div class="card rv" style="--d:.1s"><span class="num">2</span><h3>Conflicts overwrite people</h3><p>When two people change the same thing, a simple "last write wins" rule silently throws one of them away. Hand-written merge logic is where the subtle bugs live.</p></div>
+      <div class="card rv" style="--d:.2s"><span class="num">3</span><h3>Sync is locked up or half-built</h3><p>Hosted sync platforms are convenient but closed, and your data and pricing live on their terms. Rolling your own on Yjs gives you merging, but you still build the server, auth, quotas, history and admin tools yourself.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="landscape">
+  <div class="wrap">
+    <div class="eyebrow rv">What already exists</div>
+    <h2 class="rv">Good tools exist. None filled this exact gap.</h2>
+    <p class="lead rv">There is no shortage of sync and collaboration products. They tend to fall into four groups: hosted and closed, bare Yjs servers, relational sync, and other CRDT ecosystems. Syncra sits where Yjs documents, self-hosting and a ready platform meet.</p>
+    <div class="tbl rv" role="table" aria-label="Comparison of sync solutions">
+      <div class="row" role="row"><span>Solution</span><span>Strength</span><span>Trade-off versus Syncra's niche</span></div>
+      <div class="row" role="row"><b>Firebase Firestore</b><span>Mature, offline persistence, huge ecosystem</span><span>Hosted, vendor lock-in, field-level last-write-wins conflicts</span></div>
+      <div class="row" role="row"><b>Supabase Realtime</b><span>Excellent Postgres tooling</span><span>Realtime delivery, not an offline-first merge runtime</span></div>
+      <div class="row" role="row"><b>PouchDB + CouchDB</b><span>Proven replication</span><span>Revision conflicts need application-level resolution; older ecosystem</span></div>
+      <div class="row" role="row"><b>Liveblocks and similar</b><span>Polished collaboration platform</span><span>Hosted and closed</span></div>
+      <div class="row" role="row"><b>Hocuspocus, y-websocket, y-sweet</b><span>Excellent Yjs servers</span><span>Less out of the box for tenancy, quotas, dashboard and a client runtime</span></div>
+      <div class="row" role="row"><b>PowerSync, ElectricSQL, Replicache, Zero</b><span>Strong SQL-oriented sync</span><span>Different data model: they sync relational data</span></div>
+      <div class="row" role="row"><b>Automerge repo</b><span>Alternative CRDT sync tooling</span><span>Different CRDT ecosystem</span></div>
+      <div class="row us" role="row"><b>Syncra</b><span>Yjs documents, self-hosted, platform included</span><span>Young project; no queries, no relational data, no end-to-end encryption</span></div>
+    </div>
+    <p class="note rv">This summary is the project's own research. Check each product's current documentation before deciding. Choose another tool if you need relational sync, queries, or a fully managed service.</p>
+  </div>
+</section>
+
+<section id="why" class="dark">
+  <div class="wrap">
+    <div class="eyebrow rv">Why Syncra</div>
+    <h2 class="rv">Yjs does the merging. Syncra does everything else.</h2>
+    <p class="lead rv">Syncra does not invent a new CRDT. All merging is done by Yjs. Syncra adds what an app still needs around it, so you can ship offline-first features without building a sync backend first.</p>
+    <div class="grid">
+      <div class="card rv"><h3>Persistent, multi-tenant server</h3><p>Per-tenant token signing, API keys, roles, quotas and rate limits.</p></div>
+      <div class="card rv" style="--d:.1s"><h3>A client runtime that survives reality</h3><p>IndexedDB storage, an offline outbox, reconnect with backoff and jitter, and multi-tab leader election.</p></div>
+      <div class="card rv" style="--d:.2s"><h3>You own it</h3><p>One Docker Compose file runs the server, worker, databases, dashboard and monitoring. Your data stays in your PostgreSQL.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="how" class="dark" style="padding-top:0">
+  <div class="wrap">
+    <div class="eyebrow">How it works</div>
+    <h2>Edit anywhere. Converge everywhere.</h2>
+    <div class="steps" style="margin-top:2rem">
+      <div>
+        <div class="step on" data-i="0"><h3>1. Edit with no network</h3><p>Changes are applied to the local document instantly and stored in IndexedDB. Nothing waits on a server.</p></div>
+        <div class="step" data-i="1"><h3>2. Reconnect</h3><p>The client reconnects with backoff and jitter, and sends only what changed since the server last saw it.</p></div>
+        <div class="step" data-i="2"><h3>3. Merge, no dialogs</h3><p>Text and lists merge automatically through Yjs. The server commits to PostgreSQL, acknowledges, and broadcasts to other subscribers.</p></div>
+      </div>
+      <div class="stage" aria-live="polite">
+        <div class="tag" id="stTag"></div>
+        <div class="big" id="stBig"></div>
+        <div class="mono" id="stMono"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="demos">
+  <div class="wrap">
+    <div class="eyebrow rv">See it working</div>
+    <h2 class="rv">Real apps, not mock-ups.</h2>
+    <p class="lead rv">These are screenshots of the demo apps and dashboard that ship in the repo. Open the demo in two windows, go offline in one, and watch them converge.</p>
+    <div class="shots">
+      <div data-speed=".03">
+        <a class="frame rv" href="/notes/"><div class="chrome"><i></i><i></i><i></i></div><img src="/images/notes.png" alt="Two people editing the same note, one of them offline" loading="lazy" /></a>
+        <p class="cap rv"><b>Notes</b><span>Rich-text collaboration, live cursors, an offline banner, and a chaos panel to drop the connection or add latency.</span></p>
+      </div>
+      <div data-speed="-.06">
+        <a class="frame phone rv" href="/inspection/" style="--d:.1s"><div class="chrome"><i></i><i></i><i></i></div><img src="/images/inspection.png" alt="Field inspection app on a phone" loading="lazy" /></a>
+        <p class="cap rv"><b>Field inspection</b><span>An installable PWA with 5,000 sites that works offline.</span></p>
+      </div>
+      <div class="wide" data-speed=".02">
+        <a class="frame rv" href="/dashboard/"><div class="chrome"><i></i><i></i><i></i></div><img src="/images/dashboard.png" alt="Syncra admin dashboard overview" loading="lazy" /></a>
+        <p class="cap rv"><b>Admin dashboard</b><span>Live monitor, document inspector, keys, usage, webhooks, members, audit log and a playground.</span></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features" style="padding-top:0">
+  <div class="wrap">
+    <div class="eyebrow rv">Everything included</div>
+    <h2 class="rv">The whole sync backend, in one repo.</h2>
+    <p class="lead rv">Everything below exists in the codebase today.</p>
+    <div class="grid">
+      <div class="card rv"><h3>Offline-first client</h3><p>IndexedDB storage, outbox, reconnect with backoff and jitter, multi-tab leader election.</p></div>
+      <div class="card rv" style="--d:.05s"><h3>Delta sync</h3><p>Over WebSockets, with HTTP pull/push endpoints for networks that block them.</p></div>
+      <div class="card rv" style="--d:.1s"><h3>Reliable delivery</h3><p>At-least-once delivery with idempotent operations. A write is acknowledged only after it is committed.</p></div>
+      <div class="card rv"><h3>Multi-tenant security</h3><p>Per-tenant token signing, API keys, roles, quotas, rate limits, and an audit log with a hash chain.</p></div>
+      <div class="card rv" style="--d:.05s"><h3>History and restore</h3><p>Time-travel view and non-destructive restore, plus snapshots and verified compaction.</p></div>
+      <div class="card rv" style="--d:.1s"><h3>Presence</h3><p>Live cursors across nodes.</p></div>
+      <div class="card rv"><h3>Change feed and webhooks</h3><p>Server-sent events and signed webhooks, so you can feed your own search or index.</p></div>
+      <div class="card rv" style="--d:.05s"><h3>Dashboard</h3><p>Live monitor, document inspector, keys, usage, webhooks, members, audit and a playground.</p></div>
+      <div class="card rv" style="--d:.1s"><h3>Observability</h3><p>Prometheus metrics, a Grafana dashboard and alert rules.</p></div>
+      <div class="card rv"><h3>Horizontal scale</h3><p>Sync nodes behind nginx, PostgreSQL shards, and Redis for cross-node hints. Losing Redis delays fan-out but loses no data.</p></div>
+      <div class="card rv" style="--d:.05s"><h3>REST API</h3><p>Documented with OpenAPI. List, read and export documents as JSON.</p></div>
+      <div class="card rv" style="--d:.1s"><h3>React bindings</h3><p><code>useDoc</code>, <code>useYMap</code> and <code>useSyncStatus</code> hooks over the client SDK.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="code" class="dark">
+  <div class="wrap two">
+    <div>
+      <div class="eyebrow rv">Developer experience</div>
+      <h2 class="rv">A few lines to a synced component.</h2>
+      <p class="lead rv" style="margin-bottom:1rem">Create a client, wrap your app, and read a shared document like any other state. The packages are not published to npm yet, so use the workspace packages in the repository.</p>
+      <a class="btn on-dark rv" href="/docs/sdk-guide.html">Read the SDK guide</a>
+    </div>
+    <pre class="rv" style="--d:.1s"><code><span class="k">import</span> { createClient } <span class="k">from</span> '@syncra/client';
+<span class="k">import</span> { SyncraProvider, useDoc, useYMap, useSyncStatus } <span class="k">from</span> '@syncra/react';
+
+<span class="k">const</span> client = createClient({
+  url: 'http://localhost:8080',
+  publishableKey: 'pk_live_...',
+  getToken: () =&gt; fetch('/api/syncra-token')
+    .then((r) =&gt; r.json()).then((j) =&gt; j.token),
+});
+
+<span class="k">function</span> Todo({ id }) {
+  <span class="k">const</span> { doc } = useDoc('todos', id);
+  <span class="k">const</span> todo = useYMap(doc);
+  <span class="k">const</span> { connection, pendingOps } = useSyncStatus();
+  <span class="k">return</span> (
+    &lt;label&gt;
+      &lt;input type="checkbox" checked={todo.done ?? false}
+        onChange={(e) =&gt; doc?.setFields({ done: e.target.checked })} /&gt;
+      {todo.title} ({connection}, {pendingOps} unsynced)
+    &lt;/label&gt;
+  );
+}</code></pre>
+  </div>
+</section>
+
+<section id="architecture" class="dark" style="padding-top:0">
+  <div class="wrap">
+    <div class="eyebrow rv">Architecture</div>
+    <h2 class="rv">Simple path, durable by design.</h2>
+    <p class="lead rv">Clients keep a local copy of each document and send Yjs updates to a sync node. The node appends them to a PostgreSQL shard, acknowledges the commit, and broadcasts to other subscribers. A worker writes snapshots, verifies them, and compacts old operations.</p>
+    <div class="arch rv">
+      <div class="node hot">App + SDK<small>IndexedDB</small></div>
+      <div class="node">nginx<small>WebSocket</small></div>
+      <div class="node hot">Sync nodes<small>auth · quotas</small></div>
+      <div class="node">PostgreSQL shards<small>your data</small></div>
+    </div>
+    <div class="flow" aria-hidden="true"></div>
+    <div class="arch rv">
+      <div class="node">Redis<small>hints only</small></div>
+      <div class="node">Control DB<small>tenants · keys</small></div>
+      <div class="node">Worker<small>snapshots · compaction</small></div>
+      <div class="node">Dashboard<small>monitor · audit</small></div>
+    </div>
+    <p style="margin-top:1.5rem"><a class="btn on-dark" href="/docs/architecture.html">Read the architecture</a></p>
+  </div>
+</section>
+
+<section id="proof">
+  <div class="wrap">
+    <div class="eyebrow rv">Measured, not claimed</div>
+    <h2 class="rv">Numbers, with the caveats.</h2>
+    <p class="lead rv">Every figure comes from committed scripts and result files, measured on one laptop with the server and load generator sharing CPU.</p>
+    <div class="stats">
+      <div class="stat rv"><b>1,000</b><span>connected clients, 0 errors and 0 drops</span></div>
+      <div class="stat rv" style="--d:.08s"><b>~26x</b><span>less data on reconnect: 3,884 bytes instead of 102,016 after 100 edits to a 102 KB document</span></div>
+      <div class="stat rv" style="--d:.16s"><b>2.8-3.5x</b><span>faster cold load after compacting a 20,000-operation document</span></div>
+    </div>
+    <div class="limits rv">
+      <h3>Honest limits</h3>
+      <ul>
+        <li>The latency target (ack p95 under 100 ms) was <b>not met</b>: p95 ranged 147-657 ms across 3 runs.</li>
+        <li>Multi-node behaviour, 5,000 connections and node-failure recovery have not been measured.</li>
+        <li>Young project: no production users and no third-party security audit.</li>
+        <li>No queries, no end-to-end encryption, no relational data. Documents are capped at 1 MiB.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="dark final">
+  <div class="wrap">
+    <h2 class="rv">Build the app. Skip the sync plumbing.</h2>
+    <p class="lead rv">Free, open source and self-hostable. Read the docs or try the demo.</p>
+    <div class="cta rv"><a class="btn on-dark primary" href="/docs/getting-started.html">Get started</a><a class="btn on-dark" href="/notes/">Try the demo</a><a class="btn on-dark" href="https://github.com/munawwar-ali/syncra">Star on GitHub</a></div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span class="brand"><img src="/logo.svg" alt="" width="22" height="22" />syncra</span>
+    <span>Demo hosting is free, so the server sleeps when idle and the first request can take up to a minute.</span>
+    <span class="r"><a href="/docs/">Docs</a><a href="/docs/faq.html">FAQ</a><a href="https://github.com/munawwar-ali/syncra">GitHub</a></span>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const $ = (s) => document.querySelector(s);
+  const root = document.documentElement;
+
+  /* ---- reveal on scroll ---- */
+  const rv = document.querySelectorAll('.rv');
+  if (reduce || !('IntersectionObserver' in window)) rv.forEach((e) => e.classList.add('in'));
+  else {
+    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .12 });
+    rv.forEach((e) => io.observe(e));
+  }
+
+  /* ---- hero devices: edit offline, reconnect, merge ---- */
+  const d1 = $('#d1'), d2 = $('#d2'), phSt = $('#phSt');
+  const frames = [
+    () => { d1.innerHTML = 'Roof <span class="edit">inspected, no leaks</span>'; d2.textContent = 'Roof'; phSt.className = 'st off'; phSt.textContent = 'offline'; },
+    () => { d2.innerHTML = 'Roof <span class="edit">+ 3 photos queued</span>'; phSt.textContent = 'offline · 1 edit queued'; },
+    () => { phSt.className = 'st'; phSt.textContent = 'reconnecting…'; },
+    () => { const m = 'Roof <span class="edit">inspected, no leaks + 3 photos</span>'; d1.innerHTML = m; d2.innerHTML = m; phSt.textContent = 'online · merged'; },
+  ];
+  let fi = 0;
+  const tick = () => { frames[fi](); fi = (fi + 1) % frames.length; };
+  tick();
+  if (!reduce) setInterval(tick, 2200); else { fi = 3; tick(); }
+
+  /* ---- sticky "how it works" stage ---- */
+  const stages = [
+    ['OFFLINE', 'You type. It saves <em>instantly</em>.', 'local IndexedDB · outbox: 2 ops'],
+    ['RECONNECTING', 'Back online. Only the <em>delta</em> is sent.', 'backoff + jitter · idempotent ops'],
+    ['MERGED', 'Both edits <em>kept</em>. No conflict dialog.', 'committed to PostgreSQL · broadcast'],
+  ];
+  const steps = [...document.querySelectorAll('.step')];
+  const setStage = (i) => {
+    steps.forEach((s, k) => s.classList.toggle('on', k === i));
+    [$('#stTag').textContent, $('#stMono').textContent] = [stages[i][0], stages[i][2]];
+    $('#stBig').innerHTML = stages[i][1];
+  };
+  setStage(0);
+
+  /* ---- scroll-linked motion ---- */
+  const bar = $('#bar'), marq = $('#marq');
+  const par = [...document.querySelectorAll('[data-speed]')];
+  let ticking = false;
+  const onScroll = () => {
+    ticking = false;
+    const y = scrollY, vh = innerHeight;
+    bar.style.transform = `scaleX(${y / Math.max(1, document.documentElement.scrollHeight - vh)})`;
+    if (reduce) return;
+    marq.style.transform = `translateX(${-y * .35}px)`;
+    par.forEach((el) => {
+      const r = el.getBoundingClientRect();
+      if (r.bottom < -200 || r.top > vh + 200) return;
+      el.style.transform = `translateY(${((r.top + r.height / 2 - vh / 2) * -el.dataset.speed).toFixed(1)}px)`;
+    });
+    let best = 0, bd = 1e9;
+    steps.forEach((s, k) => { const r = s.getBoundingClientRect(); const d = Math.abs(r.top + r.height / 2 - vh * .5); if (d < bd) { bd = d; best = k; } });
+    if (!steps[best].classList.contains('on')) setStage(best);
+  };
+  addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, { passive: true });
+  addEventListener('resize', onScroll);
+  onScroll();
+
+  /* ---- custom cursor (fine pointers only) ---- */
+  const ring = $('#ring'), dot = $('#dot');
+  let mx = -100, my = -100, rx = -100, ry = -100;
+  if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    addEventListener('mousemove', (e) => { mx = e.clientX; my = e.clientY; root.classList.add('has-cursor'); dot.style.transform = `translate(${mx}px,${my}px)`;
+      const t = e.target.closest('a, button, .card, .frame');
+      ring.classList.toggle('hover', !!t);
+      ring.classList.toggle('text', !t && !!e.target.closest('pre, code'));
+    });
+    addEventListener('mousedown', () => ring.classList.add('down'));
+    addEventListener('mouseup', () => ring.classList.remove('down'));
+    document.addEventListener('mouseleave', () => root.classList.remove('has-cursor'));
+    (function loop() { rx += (mx - rx) * .18; ry += (my - ry) * .18; ring.style.transform = `translate(${rx}px,${ry}px)`; requestAnimationFrame(loop); })();
+  }
+
+  /* ---- background: drifting sync network with travelling packets ---- */
+  const cv = $('#bg'), cx = cv.getContext('2d');
+  let W, H, nodes = [], packets = [], last = 0, spawn = 0;
+  const LINK = 150;
+  const init = () => {
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const n = Math.min(70, Math.round(W * H / 18000));
+    nodes = Array.from({ length: n }, (_, i) => ({ x: Math.random() * W, y: Math.random() * H, vx: (Math.random() - .5) * .25, vy: (Math.random() - .5) * .25, hot: i % 7 === 0 }));
+  };
+  const draw = (t) => {
+    const dt = Math.min(50, t - last) / 16; last = t;
+    cx.clearRect(0, 0, W, H);
+    for (const p of nodes) {
+      p.x += p.vx * dt; p.y += p.vy * dt;
+      if (p.x < 0 || p.x > W) p.vx *= -1; if (p.y < 0 || p.y > H) p.vy *= -1;
+      const dx = mx - p.x, dy = my - p.y, d2 = dx * dx + dy * dy;
+      if (d2 < 22500 && d2 > 1) { p.x += dx * .002 * dt; p.y += dy * .002 * dt; }
+    }
+    cx.lineWidth = 1;
+    const edges = [];
+    for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
+      const a = nodes[i], b = nodes[j], d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (d < LINK) { cx.strokeStyle = `rgba(8,9,11,${(1 - d / LINK) * .13})`; cx.beginPath(); cx.moveTo(a.x, a.y); cx.lineTo(b.x, b.y); cx.stroke(); edges.push([a, b]); }
+    }
+    for (const p of nodes) {
+      cx.beginPath(); cx.arc(p.x, p.y, p.hot ? 4 : 2, 0, 7);
+      cx.fillStyle = p.hot ? '#CDF22B' : 'rgba(8,9,11,.35)'; cx.fill();
+      if (p.hot) { cx.strokeStyle = '#08090B'; cx.lineWidth = 1.2; cx.stroke(); }
+    }
+    spawn -= dt;
+    if (spawn <= 0 && edges.length) { packets.push({ e: edges[Math.random() * edges.length | 0], t: 0 }); spawn = 25; }
+    packets = packets.filter((k) => (k.t += .012 * dt) < 1);
+    for (const k of packets) {
+      const [a, b] = k.e; cx.beginPath(); cx.arc(a.x + (b.x - a.x) * k.t, a.y + (b.y - a.y) * k.t, 3.2, 0, 7);
+      cx.fillStyle = '#CDF22B'; cx.fill(); cx.strokeStyle = '#08090B'; cx.lineWidth = 1; cx.stroke();
+    }
+    if (!reduce) requestAnimationFrame(draw);
+  };
+  init(); addEventListener('resize', init);
+  requestAnimationFrame(draw);
+})();
+</script>
 </body>
 </html>
