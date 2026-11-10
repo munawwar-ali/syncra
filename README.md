@@ -9,6 +9,12 @@
 
 > Status: early. No production users, no external security audit. Measured performance is from one laptop and one sync node (see [Benchmarks](#benchmarks)).
 
+## Live demo
+
+**https://syncra-silk.vercel.app/**: [notes demo](https://syncra-silk.vercel.app/notes/) (open it in two windows and go offline in one), [field inspection app](https://syncra-silk.vercel.app/inspection/), [dashboard](https://syncra-silk.vercel.app/dashboard/) and [docs](https://syncra-silk.vercel.app/docs/).
+
+The sync server runs on a free host that sleeps when idle, so the first request can take up to a minute. The dashboard login is not published here; run the project locally (below) to get your own.
+
 ## Why Syncra?
 
 - **Works offline.** Every edit is saved on the device first and sent when a connection is available.
