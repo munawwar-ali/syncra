@@ -237,9 +237,13 @@
   /* ---- scroll-filled headline: words light up as you scroll ---- */
   .w { opacity: .2; transition: opacity .18s linear; }
 
-  /* ---- feature cards ---- */
-  .ft { position: relative; display: flex; flex-direction: column; padding: 1.5rem 1.4rem 1.3rem; transition: transform .25s cubic-bezier(.2,.7,.2,1), box-shadow .25s, border-color .2s; }
-  .ft:hover { transform: translateY(-5px); border-color: var(--ink); box-shadow: 5px 5px 0 var(--lime); }
+  /* ---- feature cards: a face-down deck that flips out as you scroll ---- */
+  .ft { position: relative; padding: 0; background: none; border: 0; transform-style: preserve-3d; will-change: transform; transition: none; }
+  .ft:hover { transform: none; border: 0; }
+  .ft-f { display: flex; flex-direction: column; height: 100%; padding: 1.5rem 1.4rem 1.3rem; background: #fff; border: 3px solid var(--lime); border-radius: 1.1rem; box-shadow: 0 0 0 1.5px var(--ink); backface-visibility: hidden; }
+  .ft-b { display: none; position: absolute; inset: 0; border: 3px solid var(--lime); border-radius: 1.1rem; box-shadow: 0 0 0 1.5px var(--ink); background: repeating-linear-gradient(45deg, #ffffff0a 0 9px, transparent 9px 18px), var(--ink); place-items: center; transform: rotateY(180deg); backface-visibility: hidden; }
+  .ft-b::before { content: ""; position: absolute; inset: .55rem; border: 1px solid #cdf22b55; border-radius: .7rem; }
+  .ft-b img { width: 3.4rem; position: relative; }
   .ft-n { align-self: flex-start; margin-bottom: 1.4rem; padding: .12rem .55rem; border-radius: 99px; background: var(--lime); border: 1px solid var(--ink); font: 600 .72rem "JetBrains Mono", monospace; letter-spacing: .06em; }
   .ft h3 { margin: 0 0 .6rem; font: 400 2rem/1.05 "Instrument Serif", Georgia, serif; letter-spacing: -.01em; }
   .ft h3 span { background: linear-gradient(var(--lime), var(--lime)) 0 88% / 0 .38em no-repeat; transition: background-size .35s cubic-bezier(.2,.7,.2,1); }
@@ -247,6 +251,19 @@
   .ft p { flex: 1; }
   .ft-tags { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: 1.2rem; }
   .ft-tags i { font: 500 .7rem "JetBrains Mono", monospace; font-style: normal; padding: .18rem .55rem; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); }
+  .deckx:not(.live) .ft:hover { transform: translateY(-4px); }
+  /* live = wide screen, motion allowed: the section is pinned and scroll drives the cards */
+  .deckx.live { height: 640vh; padding: 0; }
+  .deckx.live .dk-pin { position: sticky; top: 0; height: 100vh; overflow: hidden; display: grid; place-items: center; }
+  .deckx.live .dk-inner { width: 100%; }
+  .deckx.live .fgrid { perspective: 1500px; }
+  .deckx.live .ft-b { display: grid; }
+  .deckx.live .lead { margin-bottom: 1.4rem; }
+  .deckx.live .ft-tags { display: none; }
+  .deckx.live .ft-f { padding: 1.1rem 1.1rem 1rem; }
+  .deckx.live .ft-n { margin-bottom: .7rem; }
+  .deckx.live .ft h3 { font-size: 1.6rem; margin-bottom: .4rem; }
+  .deckx.live .ft p { font-size: .86rem; line-height: 1.45; }
 
   /* ---- screenshots ---- */
   .shots { display: grid; grid-template-columns: 1.5fr 1fr; gap: 2rem; align-items: start; }
@@ -303,7 +320,7 @@
     html { scroll-behavior: auto; }
     .rv { opacity: 1; transform: none; transition: none; }
     .flow { animation: none; }
-    .ft, .ft h3 span { transition: none; }
+    .ft h3 span { transition: none; }
     .sc.on, .sc.on .chips .lg.a, .sc.on .mini, .pt, .sc.on .lane i, .vid::before, .vid::after, .sc.on .cu, .sc.on .rip::before, .sc.on .rip::after, .sc.on .hub img { animation: none; }
   }
 </style>
@@ -503,86 +520,87 @@
   </div>
 </section>
 
-<section id="features" style="padding-top:0">
+<section id="features" class="deckx" style="padding-top:0"><div class="dk-pin"><div class="dk-inner">
   <div class="wrap">
     <div class="eyebrow rv">Everything included</div>
     <h2 class="rv">The whole sync backend, in one repo.</h2>
     <p class="lead rv">Everything below exists in the codebase today.</p>
-    <div class="grid fgrid">
-      <div class="card ft rv">
+    <div class="grid fgrid" id="fgrid">
+      <div class="card ft"><div class="ft-f">
         <span class="ft-n">01</span>
         <h3><span>Offline-first client</span></h3>
         <p>IndexedDB storage, an outbox, reconnect with backoff and jitter, and multi-tab leader election.</p>
         <div class="ft-tags"><i>IndexedDB</i><i>Outbox</i><i>Multi-tab</i></div>
-      </div>
-      <div class="card ft rv" style="--d:.05s">
+      </div><div class="ft-b" aria-hidden="true"><img src="/logo.svg" alt="" /></div></div>
+      <div class="card ft"><div class="ft-f">
         <span class="ft-n">02</span>
         <h3><span>Delta sync</span></h3>
         <p>Over WebSockets, with HTTP pull/push endpoints for networks that block them.</p>
         <div class="ft-tags"><i>WebSocket</i><i>HTTP fallback</i></div>
-      </div>
-      <div class="card ft rv" style="--d:.1s">
+      </div><div class="ft-b" aria-hidden="true"><img src="/logo.svg" alt="" /></div></div>
+      <div class="card ft"><div class="ft-f">
         <span class="ft-n">03</span>
         <h3><span>Reliable delivery</span></h3>
         <p>At-least-once delivery with idempotent operations. A write is acknowledged only after it is committed.</p>
         <div class="ft-tags"><i>At-least-once</i><i>Idempotent</i></div>
-      </div>
-      <div class="card ft rv">
+      </div><div class="ft-b" aria-hidden="true"><img src="/logo.svg" alt="" /></div></div>
+      <div class="card ft"><div class="ft-f">
         <span class="ft-n">04</span>
         <h3><span>Multi-tenant security</span></h3>
         <p>Per-tenant token signing, API keys, roles, quotas, rate limits, and an audit log with a hash chain.</p>
         <div class="ft-tags"><i>API keys</i><i>Roles</i><i>Quotas</i><i>Audit log</i></div>
-      </div>
-      <div class="card ft rv" style="--d:.05s">
+      </div><div class="ft-b" aria-hidden="true"><img src="/logo.svg" alt="" /></div></div>
+      <div class="card ft"><div class="ft-f">
         <span class="ft-n">05</span>
         <h3><span>History and restore</span></h3>
         <p>Time-travel view and non-destructive restore, plus snapshots and verified compaction.</p>
         <div class="ft-tags"><i>Time travel</i><i>Snapshots</i></div>
-      </div>
-      <div class="card ft rv" style="--d:.1s">
+      </div><div class="ft-b" aria-hidden="true"><img src="/logo.svg" alt="" /></div></div>
+      <div class="card ft"><div class="ft-f">
         <span class="ft-n">06</span>
         <h3><span>Presence</span></h3>
         <p>See who else is in a document, with live cursors that work across nodes.</p>
         <div class="ft-tags"><i>Live cursors</i><i>Cross-node</i></div>
-      </div>
-      <div class="card ft rv">
+      </div><div class="ft-b" aria-hidden="true"><img src="/logo.svg" alt="" /></div></div>
+      <div class="card ft"><div class="ft-f">
         <span class="ft-n">07</span>
         <h3><span>Change feed and webhooks</span></h3>
         <p>Server-sent events and signed webhooks, so you can feed your own search or index.</p>
         <div class="ft-tags"><i>SSE</i><i>Signed webhooks</i></div>
-      </div>
-      <div class="card ft rv" style="--d:.05s">
+      </div><div class="ft-b" aria-hidden="true"><img src="/logo.svg" alt="" /></div></div>
+      <div class="card ft"><div class="ft-f">
         <span class="ft-n">08</span>
         <h3><span>Dashboard</span></h3>
         <p>Live monitor, document inspector, keys, usage, webhooks, members, audit and a playground.</p>
         <div class="ft-tags"><i>Monitor</i><i>Inspector</i><i>Playground</i></div>
-      </div>
-      <div class="card ft rv" style="--d:.1s">
+      </div><div class="ft-b" aria-hidden="true"><img src="/logo.svg" alt="" /></div></div>
+      <div class="card ft"><div class="ft-f">
         <span class="ft-n">09</span>
         <h3><span>Observability</span></h3>
         <p>Prometheus metrics, a Grafana dashboard and alert rules, ready to import.</p>
         <div class="ft-tags"><i>Prometheus</i><i>Grafana</i><i>Alerts</i></div>
-      </div>
-      <div class="card ft rv">
+      </div><div class="ft-b" aria-hidden="true"><img src="/logo.svg" alt="" /></div></div>
+      <div class="card ft"><div class="ft-f">
         <span class="ft-n">10</span>
         <h3><span>Horizontal scale</span></h3>
         <p>Sync nodes behind nginx, PostgreSQL shards, and Redis for cross-node hints. Losing Redis delays fan-out but loses no data.</p>
         <div class="ft-tags"><i>nginx</i><i>Shards</i><i>Redis</i></div>
-      </div>
-      <div class="card ft rv" style="--d:.05s">
+      </div><div class="ft-b" aria-hidden="true"><img src="/logo.svg" alt="" /></div></div>
+      <div class="card ft"><div class="ft-f">
         <span class="ft-n">11</span>
         <h3><span>REST API</span></h3>
         <p>Documented with OpenAPI. List, read and export documents as JSON.</p>
         <div class="ft-tags"><i>OpenAPI</i><i>JSON export</i></div>
-      </div>
-      <div class="card ft rv" style="--d:.1s">
+      </div><div class="ft-b" aria-hidden="true"><img src="/logo.svg" alt="" /></div></div>
+      <div class="card ft"><div class="ft-f">
         <span class="ft-n">12</span>
         <h3><span>React bindings</span></h3>
         <p>Hooks over the client SDK: read a shared document like any other state.</p>
         <div class="ft-tags"><i>useDoc</i><i>useYMap</i><i>useSyncStatus</i></div>
-      </div>
+      </div><div class="ft-b" aria-hidden="true"><img src="/logo.svg" alt="" /></div></div>
     </div>
   </div>
+</div></div>
 </section>
 
 <section id="code" class="dark">
@@ -851,6 +869,40 @@
     root.style.scrollbarColor = (light ? '#08090B' : '#CDF22B') + ' ' + bg;
   };
 
+  /* ---- features: face-down deck, one card flips out per slice of scroll ---- */
+  const dk = $('#features'), dkIn = dk.querySelector('.dk-inner'), fgrid = $('#fgrid');
+  const fcards = [...fgrid.children], NC = fcards.length, KS = 2.6;
+  const wide = matchMedia('(min-width: 861px)');
+  let dkLive = false, geo = [];
+  fgrid.style.position = 'relative';
+  const dkSetup = () => {
+    dkLive = wide.matches && !reduce;
+    dk.classList.toggle('live', dkLive);
+    dkIn.style.transform = '';
+    fcards.forEach((c) => { c.style.transform = ''; c.style.zIndex = ''; });
+    if (!dkLive) return;
+    const fit = Math.min(1, (innerHeight - 32) / dkIn.offsetHeight);
+    dkIn.style.transform = 'scale(' + fit + ')';
+    const gx = fgrid.offsetWidth / 2, gy = fgrid.offsetHeight / 2;
+    geo = fcards.map((c) => ({ tx: gx - (c.offsetLeft + c.offsetWidth / 2), ty: gy - (c.offsetTop + c.offsetHeight / 2) }));
+    dkUpdate();
+  };
+  const dkUpdate = () => {
+    if (!dkLive) return;
+    const r = dk.getBoundingClientRect(), L = Math.max(1, r.height - innerHeight);
+    const p = clamp((-r.top / L - .05) / .86);
+    fcards.forEach((c, i) => {
+      const e = sm(clamp((p * (NC + KS - 1) - i) / KS)), arc = Math.sin(Math.PI * e), inv = 1 - e;
+      const x = inv * (geo[i].tx - i * 1.1), y = inv * (geo[i].ty - i * 1.5);
+      c.style.transform = 'translate3d(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px,' + (arc * 160).toFixed(1) + 'px) rotateX(' + (arc * 14).toFixed(1) + 'deg) rotateY(' + (inv * 180).toFixed(1) + 'deg) rotateZ(' + (inv * (180 + (rnd(i, 9) - .5) * 14)).toFixed(1) + 'deg) scale(' + (1 + arc * .16).toFixed(3) + ')';
+      c.style.zIndex = e <= 0 ? NC - i : e < 1 ? 300 : 100 + i;
+    });
+  };
+  wide.addEventListener('change', dkSetup);
+  addEventListener('resize', dkSetup);
+  dkSetup();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(dkSetup);
+
   /* ---- scroll-linked motion ---- */
   const bar = $('#bar'), marq = $('#marq');
   const par = [...document.querySelectorAll('[data-speed]')];
@@ -859,7 +911,7 @@
     ticking = false;
     const y = scrollY, vh = innerHeight;
     bar.style.transform = `scaleX(${y / Math.max(1, document.documentElement.scrollHeight - vh)})`;
-    chapters(); fillWords(); scrollbar();
+    chapters(); fillWords(); scrollbar(); dkUpdate();
     if (reduce) return;
     marq.style.transform = `translateX(${-y * .35}px)`;
     par.forEach((el) => {
