@@ -27,14 +27,11 @@
   #bg { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
   #bar { position: fixed; top: 0; left: 0; height: 3px; width: 100%; background: var(--lime); transform-origin: 0 50%; transform: scaleX(0); z-index: 100; border-bottom: 1px solid var(--ink); }
   html.has-cursor, html.has-cursor * { cursor: none !important; }
-  .cur { position: fixed; left: 0; top: 0; pointer-events: none; z-index: 9999; opacity: 0; transition: opacity .2s; }
+  .cur { position: fixed; left: 0; top: 0; width: 26px; height: 26px; margin: -2px 0 0 -2px; pointer-events: none; z-index: 9999; opacity: 0; transition: opacity .2s; }
   html.has-cursor .cur { opacity: 1; }
-  .cur-dot { width: 8px; height: 8px; margin: -4px; border-radius: 50%; background: var(--lime); border: 1.5px solid var(--ink); }
-  .cur-ring { width: 36px; height: 36px; margin: -18px; border-radius: 50%; border: 1.5px solid #fff; mix-blend-mode: difference;
-    transition: width .2s, height .2s, margin .2s, background .2s; }
-  .cur-ring.hover { width: 68px; height: 68px; margin: -34px; background: #fff; }
-  .cur-ring.down { width: 24px; height: 24px; margin: -12px; }
-  .cur-ring.text { width: 4px; height: 28px; margin: -14px -2px; border-radius: 2px; background: #fff; }
+  .cur path { fill: var(--lime); stroke: var(--ink); stroke-width: 1.6; stroke-linejoin: miter; stroke-miterlimit: 10; transition: transform .12s; transform-origin: 2px 2px; }
+  .cur.hover path { transform: scale(1.25); }
+  .cur.down path { transform: scale(.88); }
 
   /* ---- nav ---- */
   nav { display: flex; align-items: center; gap: 1.5rem; padding: 1rem 0; position: relative; z-index: 5; }
@@ -180,8 +177,7 @@
 <body>
 <canvas id="bg" aria-hidden="true"></canvas>
 <div id="bar" aria-hidden="true"></div>
-<div class="cur cur-ring" id="ring" aria-hidden="true"></div>
-<div class="cur cur-dot" id="dot" aria-hidden="true"></div>
+<svg class="cur" id="cur" viewBox="0 0 26 26" aria-hidden="true"><path d="M2 2 L2 20 L6.6 15.6 L10.2 23.4 L13.6 21.9 L10.1 14.2 L16.6 14.2 Z"/></svg>
 
 <div class="wrap">
   <nav aria-label="Main">
@@ -482,18 +478,15 @@
   onScroll();
 
   /* ---- custom cursor (fine pointers only) ---- */
-  const ring = $('#ring'), dot = $('#dot');
-  let mx = -100, my = -100, rx = -100, ry = -100;
+  const cur = $('#cur');
+  let mx = -100, my = -100;
   if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
-    addEventListener('mousemove', (e) => { mx = e.clientX; my = e.clientY; root.classList.add('has-cursor'); dot.style.transform = `translate(${mx}px,${my}px)`;
-      const t = e.target.closest('a, button, .card, .frame');
-      ring.classList.toggle('hover', !!t);
-      ring.classList.toggle('text', !t && !!e.target.closest('pre, code'));
+    addEventListener('mousemove', (e) => { mx = e.clientX; my = e.clientY; root.classList.add('has-cursor'); cur.style.transform = `translate(${mx}px,${my}px)`;
+      cur.classList.toggle('hover', !!e.target.closest('a, button, .card, .frame'));
     });
-    addEventListener('mousedown', () => ring.classList.add('down'));
-    addEventListener('mouseup', () => ring.classList.remove('down'));
+    addEventListener('mousedown', () => cur.classList.add('down'));
+    addEventListener('mouseup', () => cur.classList.remove('down'));
     document.addEventListener('mouseleave', () => root.classList.remove('has-cursor'));
-    (function loop() { rx += (mx - rx) * .18; ry += (my - ry) * .18; ring.style.transform = `translate(${rx}px,${ry}px)`; requestAnimationFrame(loop); })();
   }
 
   /* ---- background: drifting sync network with travelling packets ---- */
