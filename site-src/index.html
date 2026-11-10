@@ -352,7 +352,7 @@
 
 <section id="story" class="dark">
   <div class="wrap">
-    <div class="eyebrow rv">The story in 19 seconds</div>
+    <div class="eyebrow rv">The story in 18 seconds</div>
     <h2 class="rv">Watch the whole flow.</h2>
     <p class="lead rv">From the problem to a merged document, as a motion explainer. Click the bar to jump to a scene.</p>
     <div class="vid rv" id="vid" role="region" aria-label="Animated explainer: the problem and how Syncra solves it">
@@ -362,7 +362,7 @@
         <span class="cu" style="--x:64%;--y:72%;--c:#CDF22B;--dx:-30px;--dy:-30px;--d:.7s"><span>Mia</span></span>
         <h4 class="a">Everyone edits. <em>At once.</em></h4>
         <div class="chips"><span class="lg a" style="--d:.15s"><img src="/logos/googledocs.svg" alt="" />Google Docs</span><span class="lg a" style="--d:.3s"><img src="/logos/notion.svg" alt="" />Notion</span><span class="lg a" style="--d:.45s"><img src="/logos/figma.svg" alt="" />Figma</span></div>
-        <p class="a" style="--d:.4s"><span class="type" style="--w:15em;--d:.5s">Even offline. Nothing lost.</span></p>
+        <p class="a" style="--d:.3s"><span class="type" style="--w:15em;--d:.35s">Even offline. Nothing lost.</span></p>
       </div>
       <div class="sc" data-t="slide">
         <h4 class="a">Building it yourself? <em>Hard.</em></h4>
@@ -407,8 +407,8 @@
       <div class="flash" id="fl"></div>
       <div class="vc">
         <button id="vp" aria-label="Pause">&#10074;&#10074;</button>
-        <div class="tr" id="vt" role="slider" aria-label="Seek" aria-valuemin="0" aria-valuemax="19" tabindex="0"><div class="fill" id="vf"></div></div>
-        <span class="tm" id="vm">0:00 / 0:19</span>
+        <div class="tr" id="vt" role="slider" aria-label="Seek" aria-valuemin="0" aria-valuemax="18" tabindex="0"><div class="fill" id="vf"></div></div>
+        <span class="tm" id="vm">0:00 / 0:18</span>
       </div>
     </div>
     <div class="vcap rv"><span><b>1</b> Problem</span><span><b>2</b> Why it's hard</span><span><b>3</b> Offline edits</span><span><b>4</b> Reconnect</span><span><b>5</b> Merge</span><span><b>6</b> Self-host</span></div>
@@ -639,7 +639,7 @@
   /* ---- motion explainer ---- */
   const vid = $('#vid'), scs = [...vid.querySelectorAll('.sc')], vp = $('#vp'), vf = $('#vf'), vm = $('#vm'), vt = $('#vt');
   const caps = [...document.querySelectorAll('.vcap span')], fl = $('#fl'), cnt = $('#cnt');
-  const dur = [2.4, 3.2, 3.6, 3.6, 3.6, 3], total = dur.reduce((a, b) => a + b, 0);
+  const dur = [1.8, 3.2, 3.6, 3.6, 3.6, 3], total = dur.reduce((a, b) => a + b, 0);
   const starts = dur.map((_, i) => dur.slice(0, i).reduce((a, b) => a + b, 0));
   let vtm = 0, play = false, vlast = 0, userPaused = false, sn = -1, prev = -1;
   const fmt = (x) => '0:' + String(Math.floor(x)).padStart(2, '0');
