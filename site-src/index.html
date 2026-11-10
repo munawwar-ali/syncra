@@ -103,15 +103,14 @@
   .row:first-child { border-top: 0; background: var(--ink); color: var(--ivory); font: 500 .78rem "JetBrains Mono", monospace; text-transform: uppercase; letter-spacing: .08em; }
   .row b { font-weight: 700; }
   .row.us { background: var(--lime); border-top: 1px solid var(--ink); }
-  .row span:nth-child(2) { color: var(--muted); }
-  .row.us span:nth-child(2) { color: var(--ink); }
+  .row > span:nth-child(2) { color: var(--muted); }
+  .row.us > span:nth-child(2) { color: var(--ink); }
   .note { color: var(--muted); font-size: .88rem; margin-top: 1rem; }
 
 
   /* ---- logo chips ---- */
   .lg { display: inline-flex; align-items: center; gap: .5rem; padding: .45rem .85rem; background: #fff; color: var(--ink); border-radius: .6rem; font-weight: 700; font-size: .95rem; border: 1px solid var(--ink); white-space: nowrap; }
-  .lg img { height: 20px; width: auto; }
-  .lg.mk::before { content: attr(data-i); display: inline-grid; place-items: center; width: 1.35rem; height: 1.35rem; background: var(--ink); color: var(--lime); border-radius: .3rem; font: 700 .75rem "JetBrains Mono", monospace; }
+  .lg img { height: 20px; width: auto; border-radius: 4px; }
   .lg.bad { background: transparent; color: var(--ivory); border: 1px dashed #5b606b; }
   .chips { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: .9rem; }
   .def { border-left: 4px solid var(--lime); padding: .4rem 0 .4rem 1.2rem; margin: 0 0 2.25rem; font-size: 1.25rem; line-height: 1.5; max-width: 46rem; }
@@ -395,7 +394,7 @@
       </div>
       <div class="sc" data-t="slide">
         <h4 class="a">Building it yourself? <em>Hard.</em></h4>
-        <div class="chips"><span class="lg a" style="--d:.2s"><img src="/logos/firebase.svg" alt="" />Rent Firebase</span><span class="lg mk a" data-i="L" style="--d:.45s">Rent Liveblocks</span><span class="lg bad shake" style="--d:.7s">&#10005; Or lose data</span></div>
+        <div class="chips"><span class="lg a" style="--d:.2s"><img src="/logos/firebase.svg" alt="" />Rent Firebase</span><span class="lg a" style="--d:.45s"><img src="/logos/liveblocks.svg" alt="" />Rent Liveblocks</span><span class="lg bad shake" style="--d:.7s">&#10005; Or lose data</span></div>
         <p class="a" style="--d:1.1s">So most teams <b>rent it</b>, or accept <b>losing work</b>.</p>
       </div>
       <div class="sc" data-t="flip">
@@ -454,7 +453,7 @@
       <div class="card rv"><h3>What users now expect</h3><p>Open the same file together, keep typing in a tunnel, and find nothing lost afterwards.</p>
         <div class="chips"><span class="lg"><img src="/logos/googledocs.svg" alt="" />Google Docs</span><span class="lg"><img src="/logos/notion.svg" alt="" />Notion</span><span class="lg"><img src="/logos/figma.svg" alt="" />Figma</span></div></div>
       <div class="card rv" style="--d:.1s"><h3>What most developers do instead</h3><p>Most don't want to build it themselves, so they rent a hosted service, or they accept losing data.</p>
-        <div class="chips"><span class="lg"><img src="/logos/firebase.svg" alt="" />Firebase</span><span class="lg mk" data-i="L">Liveblocks</span><span class="lg bad">&#10005; Lose data</span></div></div>
+        <div class="chips"><span class="lg"><img src="/logos/firebase.svg" alt="" />Firebase</span><span class="lg"><img src="/logos/liveblocks.svg" alt="" />Liveblocks</span><span class="lg bad">&#10005; Lose data</span></div></div>
     </div>
     <div class="grid">
       <div class="card rv"><span class="num">1</span><h3>Work gets lost</h3><p>Forms fail to save, edits vanish on reconnect, and users learn not to trust the app. Offline support is usually bolted on late and never finished.</p></div>
@@ -474,14 +473,14 @@
       <div class="row" role="row"><span>Solution</span><span>Strength</span><span>Trade-off versus Syncra's niche</span></div>
       <div class="row" role="row"><b><span class="lg"><img src="/logos/firebase.svg" alt="" />Firebase Firestore</span></b><span>Mature, offline persistence, huge ecosystem</span><span>Hosted, vendor lock-in, field-level last-write-wins conflicts</span></div>
       <div class="row" role="row"><b><span class="lg"><img src="/logos/supabase.svg" alt="" />Supabase Realtime</span></b><span>Excellent Postgres tooling</span><span>Realtime delivery, not an offline-first merge runtime</span></div>
-      <div class="row" role="row"><b><span class="lg mk" data-i="P">PouchDB</span><span class="lg"><img src="/logos/apachecouchdb.svg" alt="" />CouchDB</span></b><span>Proven replication</span><span>Revision conflicts need application-level resolution; older ecosystem</span></div>
-      <div class="row" role="row"><b><span class="lg mk" data-i="L">Liveblocks and similar</span></b><span>Polished collaboration platform</span><span>Hosted and closed</span></div>
-      <div class="row" role="row"><b><span class="lg mk" data-i="H">Hocuspocus</span><span class="lg mk" data-i="Y">y-websocket</span><span class="lg mk" data-i="Y">y-sweet</span></b><span>Excellent Yjs servers</span><span>Less out of the box for tenancy, quotas, dashboard and a client runtime</span></div>
-      <div class="row" role="row"><b><span class="lg mk" data-i="P">PowerSync</span><span class="lg mk" data-i="E">ElectricSQL</span><span class="lg mk" data-i="R">Replicache</span><span class="lg mk" data-i="Z">Zero</span></b><span>Strong SQL-oriented sync</span><span>Different data model: they sync relational data</span></div>
-      <div class="row" role="row"><b><span class="lg mk" data-i="A">Automerge repo</span></b><span>Alternative CRDT sync tooling</span><span>Different CRDT ecosystem</span></div>
+      <div class="row" role="row"><b><span class="lg"><img src="/logos/pouchdb.png" alt="" />PouchDB</span><span class="lg"><img src="/logos/apachecouchdb.svg" alt="" />CouchDB</span></b><span>Proven replication</span><span>Revision conflicts need application-level resolution; older ecosystem</span></div>
+      <div class="row" role="row"><b><span class="lg"><img src="/logos/liveblocks.svg" alt="" />Liveblocks and similar</span></b><span>Polished collaboration platform</span><span>Hosted and closed</span></div>
+      <div class="row" role="row"><b><span class="lg"><img src="/logos/hocuspocus.png" alt="" />Hocuspocus</span><span class="lg"><img src="/logos/yjs.svg" alt="" />y-websocket</span><span class="lg"><img src="/logos/ysweet.png" alt="" />y-sweet</span></b><span>Excellent Yjs servers</span><span>Less out of the box for tenancy, quotas, dashboard and a client runtime</span></div>
+      <div class="row" role="row"><b><span class="lg"><img src="/logos/powersync.svg" alt="" />PowerSync</span><span class="lg"><img src="/logos/electric.svg" alt="" />ElectricSQL</span><span class="lg"><img src="/logos/replicache.png" alt="" />Replicache</span><span class="lg"><img src="/logos/zero.ico" alt="" />Zero</span></b><span>Strong SQL-oriented sync</span><span>Different data model: they sync relational data</span></div>
+      <div class="row" role="row"><b><span class="lg"><img src="/logos/automerge.png" alt="" />Automerge repo</span></b><span>Alternative CRDT sync tooling</span><span>Different CRDT ecosystem</span></div>
       <div class="row us" role="row"><b><span class="lg"><img src="/logo.svg" alt="" />Syncra</span></b><span>Yjs documents, self-hosted, platform included</span><span>Young project; no queries, no relational data, no end-to-end encryption</span></div>
     </div>
-    <p class="note rv">Logos are trademarks of their owners and appear only to identify each product; a letter badge means no logo is shown. This summary is the project's own research. Check each product's current documentation before deciding. Choose another tool if you need relational sync, queries, or a fully managed service.</p>
+    <p class="note rv">Logos are trademarks of their owners and appear only to identify each product. This summary is the project's own research. Check each product's current documentation before deciding. Choose another tool if you need relational sync, queries, or a fully managed service.</p>
   </div>
 </section>
 
