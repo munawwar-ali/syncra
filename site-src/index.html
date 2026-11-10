@@ -209,17 +209,38 @@
   .vcap span.act { border-color: var(--lime); color: var(--ivory); }
   .vcap b { color: var(--lime); }
 
-  /* ---- sticky steps ---- */
-  .steps { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: start; }
-  .step { min-height: 62vh; display: flex; flex-direction: column; justify-content: center; opacity: .3; transition: opacity .3s; }
-  .step.on { opacity: 1; }
-  .step h3 { font-size: 1.5rem; margin: 0 0 .5rem; letter-spacing: -.02em; }
-  .step p { color: var(--muted-dark); margin: 0; }
-  .stage { position: sticky; top: 18vh; background: var(--ink-2); border: 1px solid #262a33; border-radius: 1rem; padding: 1.5rem; min-height: 15rem; }
-  .stage .tag { font: 500 .78rem "JetBrains Mono", monospace; color: var(--lime); margin-bottom: 1rem; }
-  .stage .big { font-size: 1.35rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.35; }
-  .stage .big em { font-style: normal; background: var(--lime); color: var(--ink); padding: 0 .2em; border-radius: .2em; }
-  .stage .mono { color: var(--muted-dark); font-size: .85rem; margin-top: 1rem; }
+  /* ---- smooth scroll (Lenis) ---- */
+  html.lenis, html.lenis body { height: auto; }
+  .lenis.lenis-smooth { scroll-behavior: auto !important; }
+  .lenis.lenis-stopped { overflow: hidden; }
+
+  /* ---- pinned chapters: one stage, the scene changes as you scroll ---- */
+  .chap { position: relative; height: 560vh; padding: 0; background: var(--ivory); }
+  .pin { position: sticky; top: 0; height: 100vh; overflow: hidden; background: var(--cbg, var(--ink)); color: var(--cfg, var(--ivory)); perspective: 1100px; perspective-origin: 50% 55%; }
+  .ch-top { position: absolute; z-index: 3; inset: 1.4rem 1.5rem auto; display: flex; justify-content: space-between; font: 500 .8rem "JetBrains Mono", monospace; text-transform: uppercase; letter-spacing: .1em; }
+  .ch-heads { position: absolute; z-index: 1; inset: 10vh 1rem auto; display: grid; text-align: center; pointer-events: none; }
+  .ch-h { grid-area: 1 / 1; will-change: transform, opacity, filter; }
+  .ch-h h3 { margin: 0; font-size: clamp(2.6rem, 10.5vw, 8.6rem); font-weight: 800; letter-spacing: -.05em; line-height: .92; text-transform: uppercase; }
+  .ch-h p { margin: .9rem auto 0; max-width: 30rem; font-size: clamp(.9rem, 1.6vw, 1.1rem); opacity: .75; }
+  .deck { position: absolute; inset: 0; transform-style: preserve-3d; pointer-events: none; z-index: 2; }
+  .c3 { position: absolute; left: 50%; top: 60%; width: clamp(9.5rem, 20vw, 14.5rem); margin: -4.2rem 0 0 calc(clamp(9.5rem, 20vw, 14.5rem) / -2); padding: .8rem .9rem; border-radius: .8rem; background: #fff; color: var(--ink); border: 1px solid var(--ink); box-shadow: 6px 6px 0 var(--sh, var(--lime)); backface-visibility: hidden; will-change: transform, opacity; transition: filter .3s, background-color .3s; }
+  .c3 b { display: block; font-size: .8rem; letter-spacing: -.01em; }
+  .c3 .ln { display: block; height: .4rem; border-radius: 99px; background: #e4e0d4; margin: .42rem 0; }
+  .c3 .chip { display: inline-block; margin-top: .35rem; padding: .08rem .5rem; border-radius: 99px; font: 600 .68rem Inter, sans-serif; font-style: normal; background: var(--lime); border: 1px solid var(--ink); }
+  .c3.off { filter: grayscale(1); background: #eceae2; }
+  .c3.off .chip { background: transparent; }
+  .rail { position: absolute; z-index: 3; right: 1.4rem; top: 50%; translate: 0 -50%; display: grid; gap: .6rem; }
+  .rail i { width: .55rem; height: .55rem; border-radius: 50%; border: 1.5px solid currentColor; opacity: .5; transition: all .25s; }
+  .rail i.on { background: currentColor; opacity: 1; transform: scale(1.3); }
+
+  /* ---- scroll-filled headline: words light up as you scroll ---- */
+  .w { opacity: .2; transition: opacity .18s linear; }
+
+  /* ---- floating call-to-action pill ---- */
+  .fab { position: fixed; z-index: 50; left: 50%; bottom: 1.2rem; translate: -50% 160%; display: flex; align-items: center; gap: .6rem; padding: .35rem .35rem .35rem .8rem; border-radius: 99px; background: var(--ink); border: 1px solid #333844; box-shadow: 0 8px 30px #0006; transition: translate .45s cubic-bezier(.2,.8,.2,1); }
+  .fab.show { translate: -50% 0; }
+  .fab img { width: 26px; height: 26px; }
+  .fab .btn { padding: .5rem 1.1rem; }
 
   /* ---- screenshots ---- */
   .shots { display: grid; grid-template-columns: 1.5fr 1fr; gap: 2rem; align-items: start; }
@@ -267,11 +288,9 @@
 
   @media (max-width: 760px) {
     nav .links a:not(.btn) { display: none; }
-    .devices, .steps, .shots, .two, .split { grid-template-columns: 1fr; }
+    .devices, .shots, .two, .split { grid-template-columns: 1fr; }
     .row { grid-template-columns: 1fr; gap: .2rem; }
     .row:first-child { display: none; }
-    .stage { position: static; }
-    .step { min-height: 0; opacity: 1; padding: 1.2rem 0; }
     footer .r { margin-left: 0; }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -390,7 +409,7 @@
   <div class="wrap">
     <div class="eyebrow rv">The problem</div>
     <p class="def rv"><b>Syncra is a sync engine:</b> software that keeps the same data identical across many users' devices, even when some of them are offline.</p>
-    <h2 class="rv">Everyone wants Google Docs-style apps. Almost nobody wants to build the sync.</h2>
+    <h2 class="rv" data-fill>Everyone wants Google Docs-style apps. Almost nobody wants to build the sync.</h2>
     <p class="lead rv">Apps like Google Docs, Notion and Figma let several people edit the same thing at once. They keep working when the internet drops, and they merge everyone's changes afterwards without losing work. This is hard to build.</p>
     <div class="split">
       <div class="card rv"><h3>What users now expect</h3><p>Open the same file together, keep typing in a tunnel, and find nothing lost afterwards.</p>
@@ -429,7 +448,7 @@
 <section id="why" class="dark">
   <div class="wrap">
     <div class="eyebrow rv">Why Syncra</div>
-    <h2 class="rv">Yjs does the merging. Syncra does everything else.</h2>
+    <h2 class="rv" data-fill>Yjs does the merging. Syncra does everything else.</h2>
     <p class="lead rv">Syncra does not invent a new CRDT. All merging is done by Yjs. Syncra adds what an app still needs around it, so you can ship offline-first features without building a sync backend first.</p>
     <div class="grid">
       <div class="card rv"><h3>Persistent, multi-tenant server</h3><p>Per-tenant token signing, API keys, roles, quotas and rate limits.</p></div>
@@ -439,22 +458,18 @@
   </div>
 </section>
 
-<section id="how" class="dark">
-  <div class="wrap">
-    <div class="eyebrow">How it works</div>
-    <h2>Edit anywhere. Converge everywhere.</h2>
-    <div class="steps" style="margin-top:2rem">
-      <div>
-        <div class="step on" data-i="0"><h3>1. Edit with no network</h3><p>Changes are applied to the local document instantly and stored in IndexedDB. Nothing waits on a server.</p></div>
-        <div class="step" data-i="1"><h3>2. Reconnect</h3><p>The client reconnects with backoff and jitter, and sends only what changed since the server last saw it.</p></div>
-        <div class="step" data-i="2"><h3>3. Merge, no dialogs</h3><p>Text and lists merge automatically through Yjs. The server commits to PostgreSQL, acknowledges, and broadcasts to other subscribers.</p></div>
-      </div>
-      <div class="stage" aria-live="polite">
-        <div class="tag" id="stTag"></div>
-        <div class="big" id="stBig"></div>
-        <div class="mono" id="stMono"></div>
-      </div>
+<section id="how" class="chap" aria-label="How Syncra works, chapter by chapter">
+  <div class="pin" id="pin">
+    <div class="ch-top"><span>How it works</span><span id="chNum">Chapter 01</span></div>
+    <div class="ch-heads">
+      <div class="ch-h"><h3>Edit anywhere.</h3><p>Laptop, phone, tablet. Every change is saved on the device first.</p></div>
+      <div class="ch-h"><h3>Go offline.</h3><p>Keep typing in a tunnel. Nothing waits for the network.</p></div>
+      <div class="ch-h"><h3>Reconnect.</h3><p>Only the delta travels: about 26x less data in our benchmark.</p></div>
+      <div class="ch-h"><h3>Merge.</h3><p>Everyone converges. No conflict dialogs, no lost work.</p></div>
+      <div class="ch-h"><h3>Own it.</h3><p>Self-host on your own PostgreSQL. Open source.</p></div>
     </div>
+    <div class="deck" id="deck" aria-hidden="true"></div>
+    <div class="rail" id="rail" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i></div>
   </div>
 </section>
 
@@ -587,6 +602,8 @@
   </div>
 </section>
 
+<div class="fab" id="fab"><img src="/logo.svg" alt="" /><a class="btn primary" href="/docs/getting-started.html">Get started</a></div>
+
 <footer>
   <div class="wrap">
     <span class="brand"><img src="/logo.svg" alt="" width="22" height="22" />syncra</span>
@@ -595,6 +612,7 @@
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
 <script>
 (() => {
   // Wake the free demo host now so the demos are ready by the time someone clicks them.
@@ -662,19 +680,87 @@
     else if (!e.isIntersecting && play) setPlay(false);
   }, { threshold: .35 }).observe(vid);
 
-  /* ---- sticky "how it works" stage ---- */
-  const stages = [
-    ['OFFLINE', 'You type. It saves <em>instantly</em>.', 'local IndexedDB · outbox: 2 ops'],
-    ['RECONNECTING', 'Back online. Only the <em>delta</em> is sent.', 'backoff + jitter · idempotent ops'],
-    ['MERGED', 'Both edits <em>kept</em>. No conflict dialog.', 'committed to PostgreSQL · broadcast'],
+  /* ---- smooth scrolling ---- */
+  if (window.Lenis && !reduce) {
+    const lenis = new Lenis({ lerp: .09, anchors: true });
+    const lraf = (t) => { lenis.raf(t); requestAnimationFrame(lraf); };
+    requestAnimationFrame(lraf);
+  }
+
+  /* ---- pinned chapters: cards (replicas) scatter offline, converge on merge ---- */
+  const how = $('#how'), pin = $('#pin'), deck = $('#deck'), rail = [...$('#rail').children];
+  const heads = [...document.querySelectorAll('.ch-h')], chNum = $('#chNum');
+  const NAMES = ['Ana · laptop', 'Raj · phone', 'Mia · tablet', 'Sam · laptop', 'Lee · phone', 'Zoe · tablet', 'Kai · laptop', 'Noor · phone'];
+  const CHIP = ['online', 'offline', 'syncing', 'merged ✓', 'yours'];
+  const BG = ['#08090B', '#FAF8F3', '#CDF22B', '#08090B', '#FAF8F3'];
+  const FG = ['#FAF8F3', '#08090B', '#08090B', '#FAF8F3', '#08090B'];
+  const cards = NAMES.map((n, i) => {
+    const c = document.createElement('div');
+    c.className = 'c3';
+    c.innerHTML = '<b>' + n + '</b><span class="ln" style="width:92%"></span><span class="ln" style="width:' + (55 + (i * 17) % 40) + '%"></span><span class="ln" style="width:70%"></span><em class="chip">online</em>';
+    deck.appendChild(c);
+    return { el: c, chip: c.querySelector('.chip') };
+  });
+  const N = cards.length;
+  const rnd = (i, k) => { const v = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; return v - Math.floor(v); };
+  // pose per chapter: x/y/z in px (scaled by U), rotations in degrees, scale, opacity
+  const poses = [
+    (i, U, p) => { const a = i / N * Math.PI * 2 + p * .9, R = 430 * U; return { x: Math.sin(a) * R, y: Math.sin(a * 2) * 26 * U, z: (Math.cos(a) - 1) * R * .9, rx: 0, ry: a * 57.3, rz: 0, s: 1, o: 1 }; },
+    (i, U) => ({ x: (rnd(i, 1) - .5) * 1000 * U, y: (rnd(i, 2) - .5) * 400 * U, z: -rnd(i, 3) * 260, rx: (rnd(i, 6) - .5) * 20, ry: (rnd(i, 5) - .5) * 36, rz: (rnd(i, 4) - .5) * 44, s: .85, o: .92 }),
+    (i, U) => { const side = i % 2 ? 1 : -1; return { x: side * 315 * U, y: ((i >> 1) - 1.5) * 100 * U, z: 0, rx: 0, ry: -side * 14, rz: side * -5, s: .9, o: 1 }; },
+    (i, U) => ({ x: (i - 3.5) * 3, y: (i - 3.5) * -4, z: i * 8, rx: 0, ry: 0, rz: (i - 3.5) * 1.1, s: 1.08, o: 1 }),
+    (i, U) => ({ x: ((i % 4) - 1.5) * 235 * U, y: (Math.floor(i / 4) - .5) * 200 * U, z: 0, rx: 0, ry: 0, rz: 0, s: .8, o: 1 }),
   ];
-  const steps = [...document.querySelectorAll('.step')];
-  const setStage = (i) => {
-    steps.forEach((s, k) => s.classList.toggle('on', k === i));
-    [$('#stTag').textContent, $('#stMono').textContent] = [stages[i][0], stages[i][2]];
-    $('#stBig').innerHTML = stages[i][1];
+  const mix = (a, b, t) => a + (b - a) * t;
+  const hex = (h) => [1, 3, 5].map((k) => parseInt(h.slice(k, k + 2), 16));
+  const mixc = (a, b, t) => 'rgb(' + hex(a).map((v, k) => Math.round(mix(v, hex(b)[k], t))).join(',') + ')';
+  const sm = (t) => t * t * (3 - 2 * t);
+  const clamp = (v, lo = 0, hi = 1) => Math.min(hi, Math.max(lo, v));
+  let lastCh = -1;
+  const chapters = () => {
+    const r = how.getBoundingClientRect(), vh = innerHeight;
+    const prog = clamp(-r.top / Math.max(1, r.height - vh));
+    const pp = prog * 4, k = Math.min(3, Math.floor(pp)), t = sm(clamp((pp - k - .22) / .56));
+    const U = clamp(Math.min(innerWidth / 1100, vh / 700), .45, 1.3);
+    pin.style.setProperty('--cbg', mixc(BG[k], BG[k + 1], t));
+    pin.style.setProperty('--cfg', mixc(FG[k], FG[k + 1], t));
+    cards.forEach((c, i) => {
+      const A = poses[k](i, U, pp), B = poses[k + 1](i, U, pp), m = (f) => mix(A[f], B[f], t);
+      c.el.style.transform = 'translate3d(' + m('x') + 'px,' + m('y') + 'px,' + m('z') + 'px) rotateX(' + m('rx') + 'deg) rotateY(' + m('ry') + 'deg) rotateZ(' + m('rz') + 'deg) scale(' + m('s') + ')';
+      c.el.style.opacity = m('o');
+    });
+    heads.forEach((h, n) => {
+      const d = pp - n, ad = Math.abs(d), v = clamp(1 - (ad - .28) / .2);
+      h.style.opacity = v;
+      h.style.transform = 'translateY(' + (d * -70).toFixed(1) + 'px) scale(' + (1 - Math.min(ad, .6) * .08).toFixed(3) + ')';
+      h.style.filter = 'blur(' + (clamp(ad - .28, 0, .5) * 26).toFixed(1) + 'px)';
+    });
+    const near = Math.round(pp);
+    if (near !== lastCh) {
+      lastCh = near;
+      chNum.textContent = 'Chapter 0' + (near + 1);
+      rail.forEach((d, n) => d.classList.toggle('on', n === near));
+      pin.style.setProperty('--sh', BG[near] === '#08090B' ? '#CDF22B' : '#08090B');
+      cards.forEach((c) => { c.chip.textContent = CHIP[near]; c.el.classList.toggle('off', near === 1); });
+    }
   };
-  setStage(0);
+
+  /* ---- scroll-filled headlines ---- */
+  const fills = [...document.querySelectorAll('[data-fill]')].map((el) => {
+    const words = el.textContent.trim().split(/\s+/);
+    el.setAttribute('aria-label', words.join(' '));
+    el.innerHTML = words.map((w) => '<span class="w" aria-hidden="true">' + w + '</span>').join(' ');
+    return { el, ws: [...el.children] };
+  });
+  const fillWords = () => fills.forEach(({ el, ws }) => {
+    const r = el.getBoundingClientRect(), vh = innerHeight;
+    const q = reduce ? 1 : clamp((vh * .88 - r.top) / (vh * .38 + r.height));
+    ws.forEach((w, j) => { w.style.opacity = (.2 + .8 * clamp(q * (ws.length + 1) - j)).toFixed(2); });
+  });
+
+  /* ---- floating call-to-action ---- */
+  const fab = $('#fab');
+  const fabUpdate = () => fab.classList.toggle('show', scrollY > innerHeight * .9 && document.documentElement.scrollHeight - scrollY - innerHeight > 500);
 
   /* ---- scroll-linked motion ---- */
   const bar = $('#bar'), marq = $('#marq');
@@ -684,6 +770,7 @@
     ticking = false;
     const y = scrollY, vh = innerHeight;
     bar.style.transform = `scaleX(${y / Math.max(1, document.documentElement.scrollHeight - vh)})`;
+    chapters(); fillWords(); fabUpdate();
     if (reduce) return;
     marq.style.transform = `translateX(${-y * .35}px)`;
     par.forEach((el) => {
@@ -691,9 +778,6 @@
       if (r.bottom < -200 || r.top > vh + 200) return;
       el.style.transform = `translateY(${((r.top + r.height / 2 - vh / 2) * -el.dataset.speed).toFixed(1)}px)`;
     });
-    let best = 0, bd = 1e9;
-    steps.forEach((s, k) => { const r = s.getBoundingClientRect(); const d = Math.abs(r.top + r.height / 2 - vh * .5); if (d < bd) { bd = d; best = k; } });
-    if (!steps[best].classList.contains('on')) setStage(best);
   };
   addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, { passive: true });
   addEventListener('resize', onScroll);
