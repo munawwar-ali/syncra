@@ -6,6 +6,8 @@
 <title>Syncra - self-hostable sync for offline-first apps</title>
 <meta name="description" content="Syncra is a self-hostable sync engine built on Yjs: server, client SDK and dashboard for offline-first apps." />
 <link rel="icon" href="/logo.svg" type="image/svg+xml" />
+<link rel="preload" as="image" href="/images/notes.png" />
+<link rel="preload" as="image" href="/images/dashboard.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -270,7 +272,7 @@
   .frame:hover { box-shadow: 12px 12px 0 var(--lime); }
   .frame .chrome { display: flex; gap: .4rem; padding: .55rem .8rem; background: var(--ink-2); }
   .frame .chrome i { width: .6rem; height: .6rem; border-radius: 50%; background: #3a3f4a; }
-  .frame img { width: 100%; }
+  .frame img { width: 100%; height: auto; }
   .frame.phone img { height: 28rem; object-fit: cover; object-position: top; }
   .cap { margin: 1.1rem 0 0; font-size: .95rem; }
   .cap b { display: block; font-size: 1.05rem; }
@@ -588,15 +590,15 @@
     <p class="lead rv">These are screenshots of the demo apps and dashboard that ship in the repo. Open the demo in two windows, go offline in one, and watch them converge.</p>
     <div class="shots">
       <div data-speed=".03">
-        <a class="frame rv" href="/notes/"><div class="chrome"><i></i><i></i><i></i></div><img src="/images/notes.png" alt="Two people editing the same note, one of them offline" loading="lazy" /></a>
+        <a class="frame rv" href="/notes/"><div class="chrome"><i></i><i></i><i></i></div><img src="/images/notes.png" width="1180" height="640" alt="Two people editing the same note, one of them offline" /></a>
         <p class="cap rv"><b>Notes</b><span>Rich-text collaboration, live cursors, an offline banner, and a chaos panel to drop the connection or add latency.</span></p>
       </div>
       <div data-speed="-.06">
-        <a class="frame phone rv" href="/inspection/" style="--d:.1s"><div class="chrome"><i></i><i></i><i></i></div><img src="/images/inspection.png" alt="Field inspection app on a phone" loading="lazy" /></a>
+        <a class="frame phone rv" href="/inspection/" style="--d:.1s"><div class="chrome"><i></i><i></i><i></i></div><img src="/images/inspection.png" width="430" height="1400" alt="Field inspection app on a phone" /></a>
         <p class="cap rv"><b>Field inspection</b><span>An installable PWA with 5,000 sites that works offline.</span></p>
       </div>
       <div class="wide" data-speed=".02">
-        <a class="frame rv" href="/dashboard/"><div class="chrome"><i></i><i></i><i></i></div><img src="/images/dashboard.png" alt="Syncra admin dashboard overview" loading="lazy" /></a>
+        <a class="frame rv" href="/dashboard/"><div class="chrome"><i></i><i></i><i></i></div><img src="/images/dashboard.png" width="1280" height="760" alt="Syncra admin dashboard overview" /></a>
         <p class="cap rv"><b>Admin dashboard</b><span>Live monitor, document inspector, keys, usage, webhooks, members, audit log and a playground.</span></p>
       </div>
     </div>
@@ -696,7 +698,6 @@
   </div>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
 <script>
 (() => {
   // Wake the free demo host now so the demos are ready by the time someone clicks them.
@@ -765,10 +766,16 @@
   }, { threshold: .35 }).observe(vid);
 
   /* ---- smooth scrolling ---- */
-  if (window.Lenis && !reduce) {
-    const lenis = new Lenis({ lerp: .09, anchors: true });
-    const lraf = (t) => { lenis.raf(t); requestAnimationFrame(lraf); };
-    requestAnimationFrame(lraf);
+  // Loaded after everything else, from our own host: a slow download only delays the smooth feel, never the page.
+  if (!reduce) {
+    const ls = document.createElement('script');
+    ls.src = '/vendor/lenis.min.js';
+    ls.onload = () => {
+      const lenis = new Lenis({ lerp: .09, anchors: true });
+      const lraf = (t) => { lenis.raf(t); requestAnimationFrame(lraf); };
+      requestAnimationFrame(lraf);
+    };
+    document.head.appendChild(ls);
   }
 
   /* ---- pinned chapters: cards (replicas) scatter offline, converge on merge ---- */
@@ -911,6 +918,8 @@
     ticking = false;
     const y = scrollY, vh = innerHeight;
     bar.style.transform = `scaleX(${y / Math.max(1, document.documentElement.scrollHeight - vh)})`;
+    // Safety net: never leave a section invisible if the observer missed it (layout shifts, fast scrolling).
+    rv.forEach((e) => { if (!e.classList.contains('in') && e.getBoundingClientRect().top < vh * .92) e.classList.add('in'); });
     chapters(); fillWords(); scrollbar(); dkUpdate();
     if (reduce) return;
     marq.style.transform = `translateX(${-y * .35}px)`;
