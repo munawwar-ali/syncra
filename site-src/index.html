@@ -254,7 +254,7 @@
   .deckx:not(.live) .ft:hover { transform: translateY(-4px); }
   /* live = wide screen, motion allowed: the section is pinned and scroll drives the cards */
   .deckx.live { height: 640vh; padding: 0; }
-  .deckx.live .dk-pin { position: sticky; top: 0; height: 100vh; overflow: hidden; display: grid; place-items: center; }
+  .deckx.live .dk-pin { position: sticky; top: 0; height: 100vh; overflow: hidden; display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); place-items: center; }
   .deckx.live .dk-inner { width: 100%; }
   .deckx.live .fgrid { perspective: 1500px; }
   .deckx.live .ft-b { display: grid; }
