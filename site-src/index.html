@@ -271,8 +271,8 @@
   <nav aria-label="Main">
     <a class="brand" href="/"><img src="/logo.svg" alt="" />syncra</a>
     <div class="links">
-      <a href="#problem">Why</a>
       <a href="#story">Watch</a>
+      <a href="#problem">Why</a>
       <a href="#landscape">Compare</a>
       <a href="#features">Features</a>
       <a href="/docs/">Docs</a>
@@ -300,60 +300,7 @@
 
 <div class="strip" aria-hidden="true"><div id="marq"><span>Offline-first</span><span>Yjs CRDTs</span><span>Self-hostable</span><span>Multi-tenant</span><span>Delta sync</span><span>Audit log</span><span>Offline-first</span><span>Yjs CRDTs</span><span>Self-hostable</span><span>Multi-tenant</span><span>Delta sync</span><span>Audit log</span></div></div>
 
-<section id="problem" class="dark">
-  <div class="wrap">
-    <div class="eyebrow rv">The problem</div>
-    <p class="def rv"><b>Syncra is a sync engine:</b> software that keeps the same data identical across many users' devices, even when some of them are offline.</p>
-    <h2 class="rv">Everyone wants Google Docs-style apps. Almost nobody wants to build the sync.</h2>
-    <p class="lead rv">Apps like Google Docs, Notion and Figma let several people edit the same thing at once. They keep working when the internet drops, and they merge everyone's changes afterwards without losing work. This is hard to build.</p>
-    <div class="split">
-      <div class="card rv"><h3>What users now expect</h3><p>Open the same file together, keep typing in a tunnel, and find nothing lost afterwards.</p>
-        <div class="chips"><span class="lg"><img src="/logos/googledocs.svg" alt="" />Google Docs</span><span class="lg"><img src="/logos/notion.svg" alt="" />Notion</span><span class="lg"><img src="/logos/figma.svg" alt="" />Figma</span></div></div>
-      <div class="card rv" style="--d:.1s"><h3>What most developers do instead</h3><p>Most don't want to build it themselves, so they rent a hosted service, or they accept losing data.</p>
-        <div class="chips"><span class="lg"><img src="/logos/firebase.svg" alt="" />Firebase</span><span class="lg mk" data-i="L">Liveblocks</span><span class="lg bad">&#10005; Lose data</span></div></div>
-    </div>
-    <div class="grid">
-      <div class="card rv"><span class="num">1</span><h3>Work gets lost</h3><p>Forms fail to save, edits vanish on reconnect, and users learn not to trust the app. Offline support is usually bolted on late and never finished.</p></div>
-      <div class="card rv" style="--d:.1s"><span class="num">2</span><h3>Conflicts overwrite people</h3><p>When two people change the same thing, a simple "last write wins" rule silently throws one of them away. Hand-written merge logic is where the subtle bugs live.</p></div>
-      <div class="card rv" style="--d:.2s"><span class="num">3</span><h3>Sync is locked up or half-built</h3><p>Hosted platforms are convenient but closed, and your data and pricing live on their terms. Rolling your own on Yjs gives you merging, but you still build the server, auth, quotas, history and admin tools yourself.</p></div>
-    </div>
-  </div>
-</section>
-
-<section id="landscape">
-  <div class="wrap">
-    <div class="eyebrow rv">What already exists</div>
-    <h2 class="rv">Good tools exist. None filled this exact gap.</h2>
-    <p class="lead rv">There is no shortage of sync and collaboration products. They tend to fall into four groups: hosted and closed, bare Yjs servers, relational sync, and other CRDT ecosystems. Syncra sits where Yjs documents, self-hosting and a ready platform meet.</p>
-    <div class="tbl rv" role="table" aria-label="Comparison of sync solutions">
-      <div class="row" role="row"><span>Solution</span><span>Strength</span><span>Trade-off versus Syncra's niche</span></div>
-      <div class="row" role="row"><b><span class="lg"><img src="/logos/firebase.svg" alt="" />Firebase Firestore</span></b><span>Mature, offline persistence, huge ecosystem</span><span>Hosted, vendor lock-in, field-level last-write-wins conflicts</span></div>
-      <div class="row" role="row"><b><span class="lg"><img src="/logos/supabase.svg" alt="" />Supabase Realtime</span></b><span>Excellent Postgres tooling</span><span>Realtime delivery, not an offline-first merge runtime</span></div>
-      <div class="row" role="row"><b><span class="lg mk" data-i="P">PouchDB</span><span class="lg"><img src="/logos/apachecouchdb.svg" alt="" />CouchDB</span></b><span>Proven replication</span><span>Revision conflicts need application-level resolution; older ecosystem</span></div>
-      <div class="row" role="row"><b><span class="lg mk" data-i="L">Liveblocks and similar</span></b><span>Polished collaboration platform</span><span>Hosted and closed</span></div>
-      <div class="row" role="row"><b><span class="lg mk" data-i="H">Hocuspocus</span><span class="lg mk" data-i="Y">y-websocket</span><span class="lg mk" data-i="Y">y-sweet</span></b><span>Excellent Yjs servers</span><span>Less out of the box for tenancy, quotas, dashboard and a client runtime</span></div>
-      <div class="row" role="row"><b><span class="lg mk" data-i="P">PowerSync</span><span class="lg mk" data-i="E">ElectricSQL</span><span class="lg mk" data-i="R">Replicache</span><span class="lg mk" data-i="Z">Zero</span></b><span>Strong SQL-oriented sync</span><span>Different data model: they sync relational data</span></div>
-      <div class="row" role="row"><b><span class="lg mk" data-i="A">Automerge repo</span></b><span>Alternative CRDT sync tooling</span><span>Different CRDT ecosystem</span></div>
-      <div class="row us" role="row"><b><span class="lg"><img src="/logo.svg" alt="" />Syncra</span></b><span>Yjs documents, self-hosted, platform included</span><span>Young project; no queries, no relational data, no end-to-end encryption</span></div>
-    </div>
-    <p class="note rv">Logos are trademarks of their owners and appear only to identify each product; a letter badge means no logo is shown. This summary is the project's own research. Check each product's current documentation before deciding. Choose another tool if you need relational sync, queries, or a fully managed service.</p>
-  </div>
-</section>
-
-<section id="why" class="dark">
-  <div class="wrap">
-    <div class="eyebrow rv">Why Syncra</div>
-    <h2 class="rv">Yjs does the merging. Syncra does everything else.</h2>
-    <p class="lead rv">Syncra does not invent a new CRDT. All merging is done by Yjs. Syncra adds what an app still needs around it, so you can ship offline-first features without building a sync backend first.</p>
-    <div class="grid">
-      <div class="card rv"><h3>Persistent, multi-tenant server</h3><p>Per-tenant token signing, API keys, roles, quotas and rate limits.</p></div>
-      <div class="card rv" style="--d:.1s"><h3>A client runtime that survives reality</h3><p>IndexedDB storage, an offline outbox, reconnect with backoff and jitter, and multi-tab leader election.</p></div>
-      <div class="card rv" style="--d:.2s"><h3>You own it</h3><p>One Docker Compose file runs the server, worker, databases, dashboard and monitoring. Your data stays in your PostgreSQL.</p></div>
-    </div>
-  </div>
-</section>
-
-<section id="story" class="dark" style="padding-top:0">
+<section id="story" class="dark">
   <div class="wrap">
     <div class="eyebrow rv">The story in 25 seconds</div>
     <h2 class="rv">Watch the whole flow.</h2>
@@ -413,6 +360,59 @@
       </div>
     </div>
     <div class="vcap rv"><span><b>1</b> Problem</span><span><b>2</b> Why it's hard</span><span><b>3</b> Offline edits</span><span><b>4</b> Reconnect</span><span><b>5</b> Merge</span><span><b>6</b> Self-host</span></div>
+  </div>
+</section>
+
+<section id="problem" class="dark" style="padding-top:0">
+  <div class="wrap">
+    <div class="eyebrow rv">The problem</div>
+    <p class="def rv"><b>Syncra is a sync engine:</b> software that keeps the same data identical across many users' devices, even when some of them are offline.</p>
+    <h2 class="rv">Everyone wants Google Docs-style apps. Almost nobody wants to build the sync.</h2>
+    <p class="lead rv">Apps like Google Docs, Notion and Figma let several people edit the same thing at once. They keep working when the internet drops, and they merge everyone's changes afterwards without losing work. This is hard to build.</p>
+    <div class="split">
+      <div class="card rv"><h3>What users now expect</h3><p>Open the same file together, keep typing in a tunnel, and find nothing lost afterwards.</p>
+        <div class="chips"><span class="lg"><img src="/logos/googledocs.svg" alt="" />Google Docs</span><span class="lg"><img src="/logos/notion.svg" alt="" />Notion</span><span class="lg"><img src="/logos/figma.svg" alt="" />Figma</span></div></div>
+      <div class="card rv" style="--d:.1s"><h3>What most developers do instead</h3><p>Most don't want to build it themselves, so they rent a hosted service, or they accept losing data.</p>
+        <div class="chips"><span class="lg"><img src="/logos/firebase.svg" alt="" />Firebase</span><span class="lg mk" data-i="L">Liveblocks</span><span class="lg bad">&#10005; Lose data</span></div></div>
+    </div>
+    <div class="grid">
+      <div class="card rv"><span class="num">1</span><h3>Work gets lost</h3><p>Forms fail to save, edits vanish on reconnect, and users learn not to trust the app. Offline support is usually bolted on late and never finished.</p></div>
+      <div class="card rv" style="--d:.1s"><span class="num">2</span><h3>Conflicts overwrite people</h3><p>When two people change the same thing, a simple "last write wins" rule silently throws one of them away. Hand-written merge logic is where the subtle bugs live.</p></div>
+      <div class="card rv" style="--d:.2s"><span class="num">3</span><h3>Sync is locked up or half-built</h3><p>Hosted platforms are convenient but closed, and your data and pricing live on their terms. Rolling your own on Yjs gives you merging, but you still build the server, auth, quotas, history and admin tools yourself.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="landscape">
+  <div class="wrap">
+    <div class="eyebrow rv">What already exists</div>
+    <h2 class="rv">Good tools exist. None filled this exact gap.</h2>
+    <p class="lead rv">There is no shortage of sync and collaboration products. They tend to fall into four groups: hosted and closed, bare Yjs servers, relational sync, and other CRDT ecosystems. Syncra sits where Yjs documents, self-hosting and a ready platform meet.</p>
+    <div class="tbl rv" role="table" aria-label="Comparison of sync solutions">
+      <div class="row" role="row"><span>Solution</span><span>Strength</span><span>Trade-off versus Syncra's niche</span></div>
+      <div class="row" role="row"><b><span class="lg"><img src="/logos/firebase.svg" alt="" />Firebase Firestore</span></b><span>Mature, offline persistence, huge ecosystem</span><span>Hosted, vendor lock-in, field-level last-write-wins conflicts</span></div>
+      <div class="row" role="row"><b><span class="lg"><img src="/logos/supabase.svg" alt="" />Supabase Realtime</span></b><span>Excellent Postgres tooling</span><span>Realtime delivery, not an offline-first merge runtime</span></div>
+      <div class="row" role="row"><b><span class="lg mk" data-i="P">PouchDB</span><span class="lg"><img src="/logos/apachecouchdb.svg" alt="" />CouchDB</span></b><span>Proven replication</span><span>Revision conflicts need application-level resolution; older ecosystem</span></div>
+      <div class="row" role="row"><b><span class="lg mk" data-i="L">Liveblocks and similar</span></b><span>Polished collaboration platform</span><span>Hosted and closed</span></div>
+      <div class="row" role="row"><b><span class="lg mk" data-i="H">Hocuspocus</span><span class="lg mk" data-i="Y">y-websocket</span><span class="lg mk" data-i="Y">y-sweet</span></b><span>Excellent Yjs servers</span><span>Less out of the box for tenancy, quotas, dashboard and a client runtime</span></div>
+      <div class="row" role="row"><b><span class="lg mk" data-i="P">PowerSync</span><span class="lg mk" data-i="E">ElectricSQL</span><span class="lg mk" data-i="R">Replicache</span><span class="lg mk" data-i="Z">Zero</span></b><span>Strong SQL-oriented sync</span><span>Different data model: they sync relational data</span></div>
+      <div class="row" role="row"><b><span class="lg mk" data-i="A">Automerge repo</span></b><span>Alternative CRDT sync tooling</span><span>Different CRDT ecosystem</span></div>
+      <div class="row us" role="row"><b><span class="lg"><img src="/logo.svg" alt="" />Syncra</span></b><span>Yjs documents, self-hosted, platform included</span><span>Young project; no queries, no relational data, no end-to-end encryption</span></div>
+    </div>
+    <p class="note rv">Logos are trademarks of their owners and appear only to identify each product; a letter badge means no logo is shown. This summary is the project's own research. Check each product's current documentation before deciding. Choose another tool if you need relational sync, queries, or a fully managed service.</p>
+  </div>
+</section>
+
+<section id="why" class="dark">
+  <div class="wrap">
+    <div class="eyebrow rv">Why Syncra</div>
+    <h2 class="rv">Yjs does the merging. Syncra does everything else.</h2>
+    <p class="lead rv">Syncra does not invent a new CRDT. All merging is done by Yjs. Syncra adds what an app still needs around it, so you can ship offline-first features without building a sync backend first.</p>
+    <div class="grid">
+      <div class="card rv"><h3>Persistent, multi-tenant server</h3><p>Per-tenant token signing, API keys, roles, quotas and rate limits.</p></div>
+      <div class="card rv" style="--d:.1s"><h3>A client runtime that survives reality</h3><p>IndexedDB storage, an offline outbox, reconnect with backoff and jitter, and multi-tab leader election.</p></div>
+      <div class="card rv" style="--d:.2s"><h3>You own it</h3><p>One Docker Compose file runs the server, worker, databases, dashboard and monitoring. Your data stays in your PostgreSQL.</p></div>
+    </div>
   </div>
 </section>
 
