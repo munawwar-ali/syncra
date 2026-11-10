@@ -237,12 +237,6 @@
   /* ---- scroll-filled headline: words light up as you scroll ---- */
   .w { opacity: .2; transition: opacity .18s linear; }
 
-  /* ---- floating call-to-action pill ---- */
-  .fab { position: fixed; z-index: 50; left: 50%; bottom: 1.2rem; translate: -50% 160%; display: flex; align-items: center; gap: .6rem; padding: .35rem .35rem .35rem .8rem; border-radius: 99px; background: var(--ink); border: 1px solid #333844; box-shadow: 0 8px 30px #0006; transition: translate .45s cubic-bezier(.2,.8,.2,1); }
-  .fab.show { translate: -50% 0; }
-  .fab img { width: 26px; height: 26px; }
-  .fab .btn { padding: .5rem 1.1rem; }
-
   /* ---- screenshots ---- */
   .shots { display: grid; grid-template-columns: 1.5fr 1fr; gap: 2rem; align-items: start; }
   .frame { display: block; border: 1px solid var(--ink); border-radius: .75rem; overflow: hidden; background: var(--ink); box-shadow: 8px 8px 0 var(--lime); transition: box-shadow .2s; }
@@ -604,8 +598,6 @@
   </div>
 </section>
 
-<div class="fab" id="fab"><img src="/logo.svg" alt="" /><a class="btn primary" href="/docs/getting-started.html">Get started</a></div>
-
 <footer>
   <div class="wrap">
     <span class="brand"><img src="/logo.svg" alt="" width="22" height="22" />syncra</span>
@@ -766,10 +758,6 @@
     ws.forEach((w, j) => { w.style.opacity = (.2 + .8 * clamp(q * (ws.length + 1) - j)).toFixed(2); });
   });
 
-  /* ---- floating call-to-action ---- */
-  const fab = $('#fab');
-  const fabUpdate = () => fab.classList.toggle('show', scrollY > innerHeight * .9 && document.documentElement.scrollHeight - scrollY - innerHeight > 500);
-
   /* ---- scroll-linked motion ---- */
   const bar = $('#bar'), marq = $('#marq');
   const par = [...document.querySelectorAll('[data-speed]')];
@@ -778,7 +766,7 @@
     ticking = false;
     const y = scrollY, vh = innerHeight;
     bar.style.transform = `scaleX(${y / Math.max(1, document.documentElement.scrollHeight - vh)})`;
-    chapters(); fillWords(); fabUpdate();
+    chapters(); fillWords();
     if (reduce) return;
     marq.style.transform = `translateX(${-y * .35}px)`;
     par.forEach((el) => {
