@@ -140,9 +140,6 @@
   .flash::before { content: ""; position: absolute; top: -10%; bottom: -10%; left: -30%; width: 22%; background: var(--lime); opacity: 0; transform: skewX(-18deg); box-shadow: 2.4rem 0 0 #ffffff55; }
   .flash.go::before { animation: sweep .6s cubic-bezier(.7,0,.3,1); }
   @keyframes sweep { from { transform: skewX(-18deg) translateX(0); opacity: 1; } to { transform: skewX(-18deg) translateX(780%); opacity: 1; } }
-  .tick { position: absolute; left: 0; right: 0; bottom: 3rem; height: 1.5rem; overflow: hidden; z-index: 1; opacity: .22; font: 500 .72rem "JetBrains Mono", monospace; letter-spacing: .15em; color: var(--lime); white-space: nowrap; }
-  .tick div { display: inline-block; animation: tick 7s linear infinite; }
-  @keyframes tick { to { transform: translateX(-50%); } }
   .pt { position: absolute; z-index: 0; top: 105%; left: var(--l); width: var(--s); height: var(--s); border-radius: 50%; background: var(--lime); opacity: .55; animation: up var(--t) linear var(--w) infinite; }
   @keyframes up { to { top: -6%; opacity: 0; } }
   .sc h4 { font-size: clamp(1.1rem, 3.2vw, 2.4rem); font-weight: 800; letter-spacing: -.035em; line-height: 1.12; margin: 0 0 .8rem; }
@@ -278,7 +275,7 @@
     html { scroll-behavior: auto; }
     .rv { opacity: 1; transform: none; transition: none; }
     .flow { animation: none; }
-    .sc.on, .sc.on .chips .lg.a, .sc.on .mini, .tick div, .pt, .sc.on .lane i, .vid::before, .vid::after, .sc.on .cu, .sc.on .rip::before, .sc.on .rip::after, .sc.on .hub img { animation: none; }
+    .sc.on, .sc.on .chips .lg.a, .sc.on .mini, .pt, .sc.on .lane i, .vid::before, .vid::after, .sc.on .cu, .sc.on .rip::before, .sc.on .rip::after, .sc.on .hub img { animation: none; }
   }
 </style>
 </head>
@@ -376,7 +373,6 @@
       </div>
 <i class="pt" style="--l:6%;--s:5px;--t:5s;--w:-1s"></i><i class="pt" style="--l:16%;--s:3px;--t:4s;--w:-3s"></i><i class="pt" style="--l:27%;--s:6px;--t:6s;--w:-2s"></i><i class="pt" style="--l:38%;--s:4px;--t:4.5s;--w:-0s"></i><i class="pt" style="--l:49%;--s:5px;--t:5.5s;--w:-4s"></i><i class="pt" style="--l:58%;--s:3px;--t:4s;--w:-2s"></i><i class="pt" style="--l:69%;--s:6px;--t:6s;--w:-5s"></i><i class="pt" style="--l:79%;--s:4px;--t:4.5s;--w:-1s"></i><i class="pt" style="--l:88%;--s:5px;--t:5s;--w:-3s"></i><i class="pt" style="--l:95%;--s:3px;--t:4s;--w:-0s"></i>
       <div class="flash" id="fl"></div>
-      <div class="tick" aria-hidden="true"><div>OFFLINE &#10022; SYNC &#10022; MERGE &#10022; YJS &#10022; SELF-HOST &#10022; OFFLINE &#10022; SYNC &#10022; MERGE &#10022; YJS &#10022; SELF-HOST &#10022; OFFLINE &#10022; SYNC &#10022; MERGE &#10022; YJS &#10022; SELF-HOST &#10022; OFFLINE &#10022; SYNC &#10022; MERGE &#10022; YJS &#10022; SELF-HOST &#10022; OFFLINE &#10022; SYNC &#10022; MERGE &#10022; YJS &#10022; SELF-HOST &#10022; OFFLINE &#10022; SYNC &#10022; MERGE &#10022; YJS &#10022; SELF-HOST &#10022; </div></div>
       <div class="vc">
         <button id="vp" aria-label="Pause">&#10074;&#10074;</button>
         <div class="tr" id="vt" role="slider" aria-label="Seek" aria-valuemin="0" aria-valuemax="20" tabindex="0"><div class="fill" id="vf"></div></div>
