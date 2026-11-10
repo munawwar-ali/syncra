@@ -6,6 +6,7 @@ import { ServerView } from './ServerView.js';
 import { Editor } from './Editor.js';
 import { NotesList } from './NotesList.js';
 import { SyncBadge } from './SyncBadge.js';
+import { WakeNotice } from './WakeNotice.js';
 import { OFFLINE_KEY, makeClient, type DemoUser } from './syncra.js';
 
 const COLORS = ['#7c3aed', '#db2777', '#ea580c', '#0891b2', '#16a34a', '#2563eb'];
@@ -176,6 +177,7 @@ function Workspace({ user, onLogout }: { user: DemoUser; onLogout: () => void })
             </span>
           </div>
         </header>
+        <WakeNotice />
         <div className="flex min-h-0 flex-1">
           <aside className="w-64 shrink-0 overflow-y-auto border-r border-line bg-surface p-3">
             <NotesList selected={noteId} onSelect={setNoteId} />

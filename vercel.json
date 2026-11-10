@@ -3,6 +3,7 @@
   "buildCommand": "bash scripts/build-site.sh",
   "outputDirectory": "site",
   "rewrites": [
+    { "source": "/healthz", "destination": "https://syncra-rwi5.onrender.com/healthz" },
     { "source": "/v1/:path*", "destination": "https://syncra-rwi5.onrender.com/v1/:path*" },
     { "source": "/demo/:path*", "destination": "https://syncra-rwi5.onrender.com/demo/:path*" }
   ]

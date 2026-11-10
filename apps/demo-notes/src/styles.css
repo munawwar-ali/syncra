@@ -172,3 +172,27 @@ textarea:focus {
     scroll-behavior: auto;
   }
 }
+
+.wake-bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 30%;
+  background: var(--ink);
+  animation: wake 1.4s ease-in-out infinite;
+}
+@keyframes wake {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(340%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wake-bar {
+    animation: none;
+    width: 100%;
+  }
+}

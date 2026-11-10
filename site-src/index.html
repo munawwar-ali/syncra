@@ -594,6 +594,8 @@
 
 <script>
 (() => {
+  // Wake the free demo host now so the demos are ready by the time someone clicks them.
+  fetch('/healthz', { cache: 'no-store', keepalive: true }).catch(() => {});
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const $ = (s) => document.querySelector(s);
   const root = document.documentElement;

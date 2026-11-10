@@ -4,6 +4,7 @@ import { SyncraProvider, useSyncStatus } from '@syncra/react';
 import { InspectionForm } from './InspectionForm.js';
 import { SiteDetail } from './SiteDetail.js';
 import { SitesList } from './SitesList.js';
+import { WakeNotice } from './WakeNotice.js';
 import { TEMPLATE_IDS, makeClient, type Role, type Session } from './syncra.js';
 
 const SESSION_KEY = 'inspection-session';
@@ -171,6 +172,7 @@ function Workspace({ session, onLogout }: { session: Session; onLogout: () => vo
           void client.clearLocalData().then(onLogout);
         }}
       />
+      <WakeNotice />
       <main className="page">
         {parts[1] === 'site' && parts[2] ? (
           <SiteDetail siteId={parts[2]} session={session} go={go} />
