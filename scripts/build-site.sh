@@ -4,7 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 rm -rf site && mkdir -p site
-cp site-src/index.html site-src/logo.svg site/ && cp -r site-src/images site-src/logos site-src/audio site/
+cp site-src/index.html site-src/logo.svg site/ && cp -r site-src/images site-src/logos site/
 pnpm --filter @syncra/dashboard... build
 pnpm --filter @syncra/dashboard exec vite build --base=/dashboard/ --outDir dist-site
 pnpm --filter @syncra/demo-notes... build
