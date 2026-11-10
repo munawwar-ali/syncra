@@ -710,7 +710,7 @@
   const mixc = (a, b, t) => 'rgb(' + hex(a).map((v, k) => Math.round(mix(v, hex(b)[k], t))).join(',') + ')';
   const sm = (t) => t * t * (3 - 2 * t);
   const clamp = (v, lo = 0, hi = 1) => Math.min(hi, Math.max(lo, v));
-  let lastCh = -1;
+  let lastCh = -1, stageBg = '#FAF8F3', stageA = 0;
   const chapters = () => {
     const r = how.getBoundingClientRect(), vh = innerHeight;
     const L = Math.max(1, r.height - vh), tail = vh * .45;
@@ -719,7 +719,8 @@
     const pre = sm(clamp((vh * .95 - r.top) / (vh * .6)));
     const pp = prog * 4, k = Math.min(3, Math.floor(pp)), t = sm(clamp((pp - k - .22) / .56));
     const U = clamp(Math.min(innerWidth / 1100, vh / 700), .45, 1.3);
-    pin.style.setProperty('--cbg', k === 0 ? BG[1] : mixc(BG[k], BG[k + 1], t));
+    stageBg = k === 0 ? BG[1] : mixc(BG[k], BG[k + 1], t); stageA = k === 0 ? t : 1;
+    pin.style.setProperty('--cbg', stageBg);
     pin.style.setProperty('--cfg', mixc(FG[k], FG[k + 1], t));
     pin.style.setProperty('--bga', k === 0 ? t : 1);
     cards.forEach((c, i) => {
@@ -758,6 +759,26 @@
     ws.forEach((w, j) => { w.style.opacity = (.2 + .8 * clamp(q * (ws.length + 1) - j)).toFixed(2); });
   });
 
+  /* ---- scrollbar follows the colour of the section under the middle of the screen ---- */
+  const rgb = (c) => (c[0] === '#' ? hex(c) : c.match(/\d+/g).slice(0, 3).map(Number));
+  const secs = [...document.querySelectorAll('section, .strip, footer')];
+  let sbKey = '';
+  const scrollbar = () => {
+    const mid = innerHeight / 2;
+    const el = secs.find((e) => { const r = e.getBoundingClientRect(); return r.top <= mid && r.bottom > mid; });
+    let bg = '#FAF8F3';
+    if (el) {
+      if (el.id === 'how') bg = stageA < .5 ? '#FAF8F3' : stageBg;
+      else if (el.classList.contains('strip')) bg = '#CDF22B';
+      else if (el.classList.contains('dark') || el.tagName === 'FOOTER') bg = '#08090B';
+    }
+    const [r, g, b] = rgb(bg), light = .299 * r + .587 * g + .114 * b > 140;
+    const key = (light ? 'l' : 'd') + bg;
+    if (key === sbKey) return;
+    sbKey = key;
+    root.style.scrollbarColor = (light ? '#08090B' : '#CDF22B') + ' ' + bg;
+  };
+
   /* ---- scroll-linked motion ---- */
   const bar = $('#bar'), marq = $('#marq');
   const par = [...document.querySelectorAll('[data-speed]')];
@@ -766,7 +787,7 @@
     ticking = false;
     const y = scrollY, vh = innerHeight;
     bar.style.transform = `scaleX(${y / Math.max(1, document.documentElement.scrollHeight - vh)})`;
-    chapters(); fillWords();
+    chapters(); fillWords(); scrollbar();
     if (reduce) return;
     marq.style.transform = `translateX(${-y * .35}px)`;
     par.forEach((el) => {
