@@ -764,6 +764,9 @@
     if (!reduce) requestAnimationFrame(draw);
   };
   init(); addEventListener('resize', init);
+  // Same shockwave as a click, fired from behind the hero on every visit and reload.
+  const welcome = () => waves.push({ x: W / 2, y: H * 0.38, r: 0 });
+  setTimeout(welcome, 250); setTimeout(welcome, 900);
   requestAnimationFrame(draw);
 })();
 </script>
