@@ -12,7 +12,19 @@ export default withMermaid(
     srcExclude: ['spec/**', 'adr/**', 'traceability.md', 'README.md'],
     // Links that leave docs/ (result files in loadtest/) are valid on GitHub but not in the built site.
     ignoreDeadLinks: [/^\.\.\//, /localhost/],
+    head: [
+      ['link', { rel: 'icon', href: `${base}logo.svg`, type: 'image/svg+xml' }],
+      [
+        'link',
+        {
+          rel: 'stylesheet',
+          href: 'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap',
+        },
+      ],
+    ],
     themeConfig: {
+      logo: '/logo.svg',
+      siteTitle: 'syncra',
       nav: [
         { text: 'Get started', link: '/getting-started' },
         { text: 'Guides', link: '/sdk-guide' },

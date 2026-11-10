@@ -5,6 +5,9 @@ export default {
     extend: {
       colors: {
         bg: 'var(--bg)',
+        ink: 'var(--ink)',
+        ivory: 'var(--ivory)',
+        lime: 'var(--lime)',
         surface: 'var(--surface)',
         'surface-2': 'var(--surface-2)',
         fg: 'var(--text)',

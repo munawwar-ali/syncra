@@ -4,10 +4,10 @@ import { useSyncStatus } from '@syncra/react';
 type Look = { label: string; dot: string; pulse?: boolean };
 
 const LOOKS: Record<string, Look> = {
-  live: { label: 'Synced', dot: 'var(--success)' },
-  syncing: { label: 'Syncing', dot: '#2563eb', pulse: true },
-  connecting: { label: 'Syncing', dot: '#2563eb', pulse: true },
-  authenticating: { label: 'Syncing', dot: '#2563eb', pulse: true },
+  live: { label: 'Synced', dot: 'var(--lime)' },
+  syncing: { label: 'Syncing', dot: 'var(--lime)', pulse: true },
+  connecting: { label: 'Syncing', dot: 'var(--lime)', pulse: true },
+  authenticating: { label: 'Syncing', dot: 'var(--lime)', pulse: true },
   offline: { label: 'Offline - changes saved on this device', dot: 'var(--offline)' },
   backoff: { label: 'Reconnecting', dot: 'var(--warning)' },
   'quota-blocked': { label: 'Paused: plan limit', dot: 'var(--warning)' },
@@ -37,7 +37,7 @@ export function SyncBadge() {
   }, []);
   const look: Look = LOOKS[s.connection] ?? { label: 'Not connected', dot: 'var(--offline)' };
   return (
-    <div className="flex items-center gap-3" role="status" aria-live="polite">
+    <div className="flex items-center gap-3 text-sm" role="status" aria-live="polite">
       <span data-testid="sync-badge" data-state={s.connection} className="flex items-center gap-2">
         <span
           aria-hidden="true"
@@ -46,10 +46,10 @@ export function SyncBadge() {
         />
         {look.label}
       </span>
-      <span data-testid="pending" className="text-muted">
+      <span data-testid="pending" className="text-ivory/60">
         {s.pendingOps} pending
       </span>
-      <span className="text-muted">Last synced {ago(s.lastSyncedAt, now)}</span>
+      <span className="text-ivory/60">Last synced {ago(s.lastSyncedAt, now)}</span>
     </div>
   );
 }

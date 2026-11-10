@@ -3,7 +3,7 @@ import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
 import { useAuth } from '../auth';
 import { useTitle } from '../hooks';
-import { Button, ErrorBanner, Field, SecretModal } from '../ui';
+import { Button, ErrorBanner, Field, Logo, SecretModal } from '../ui';
 
 const email = z.string().trim().email('Enter a valid email address');
 const password = z.string().min(10, 'Use at least 10 characters');
@@ -32,11 +32,17 @@ function AuthShell({
 }) {
   useTitle(title);
   return (
-    <main className="mx-auto mt-16 max-w-sm px-4">
-      <h1 className="mb-1 text-xl font-semibold">{title}</h1>
-      <p className="mb-6 text-muted">Syncra, the self-hostable sync engine.</p>
-      {children}
-      <p className="mt-4 text-muted">{footer}</p>
+    <main className="page-in mx-auto mt-14 max-w-sm px-4">
+      <div className="mb-6 flex items-center gap-2 rounded-card bg-ink px-4 py-3 text-lg font-bold tracking-tight text-ivory">
+        <Logo size={28} />
+        syncra
+      </div>
+      <div className="rounded-card border border-line bg-surface p-6 shadow-[6px_6px_0_var(--lime)]">
+        <h1 className="mb-1 text-2xl font-extrabold tracking-tight">{title}</h1>
+        <p className="mb-6 text-muted">Syncra, the self-hostable sync engine.</p>
+        {children}
+        <p className="mt-4 text-muted">{footer}</p>
+      </div>
     </main>
   );
 }

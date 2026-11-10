@@ -10,7 +10,7 @@ export function NotesList(props: {
   return (
     <nav aria-label="Notes">
       <button
-        className="mb-3 w-full rounded-input bg-primary px-3 py-2 font-medium text-primary-contrast"
+        className="btn-lift mb-3 w-full rounded-input border border-primary bg-primary px-3 py-2 font-semibold text-primary-contrast"
         onClick={() => {
           const doc = notes.create();
           props.onSelect(doc.id);
@@ -28,7 +28,7 @@ export function NotesList(props: {
               }}
               aria-current={props.selected === e.id}
               className={`min-w-0 flex-1 truncate rounded-input px-2 py-1.5 text-left ${
-                props.selected === e.id ? 'bg-surface-2 font-medium' : 'hover:bg-surface'
+                props.selected === e.id ? 'bg-lime font-semibold text-ink' : 'hover:bg-surface-2'
               }`}
             >
               {e.title ?? 'Untitled note'}

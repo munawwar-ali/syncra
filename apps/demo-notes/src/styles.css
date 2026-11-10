@@ -3,31 +3,36 @@
 @tailwind utilities;
 
 :root {
-  --bg: #ffffff;
-  --surface: #f6f7fb;
-  --surface-2: #eceff7;
-  --text: #0f172a;
-  --text-muted: #5b6478;
-  --border: #dde2ef;
-  --primary: #4f46e5;
-  --primary-contrast: #ffffff;
-  --success: #16a34a;
-  --warning: #d97706;
-  --danger: #dc2626;
+  --bg: #faf8f3;
+  --surface: #ffffff;
+  --surface-2: #f1eee4;
+  --text: #08090b;
+  --text-muted: #5e6068;
+  --border: #e4e0d4;
+  --primary: #08090b;
+  --primary-contrast: #cdf22b;
+  --success: #5fa30f;
+  --success-text: #3b6b0a;
+  --warning: #b45309;
+  --danger: #c62828;
   --offline: #6b7280;
+  --lime: #cdf22b;
+  --ink: #08090b;
+  --ivory: #faf8f3;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --bg: #0b1020;
-    --surface: #131a2e;
-    --surface-2: #1b2440;
-    --text: #e6e9f5;
-    --text-muted: #9aa4bf;
-    --border: #28324f;
-    --primary: #818cf8;
-    --primary-contrast: #0b1020;
-    --success: #4ade80;
+    --bg: #08090b;
+    --surface: #14161b;
+    --surface-2: #1c1f26;
+    --text: #faf8f3;
+    --text-muted: #9a9da6;
+    --border: #262a33;
+    --primary: #cdf22b;
+    --primary-contrast: #08090b;
+    --success: #a3e635;
+    --success-text: #a3e635;
     --warning: #fbbf24;
     --danger: #f87171;
     --offline: #9ca3af;
@@ -107,4 +112,63 @@ body {
 }
 .pulse {
   animation: pulse-dot 1s ease-in-out infinite;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+::selection {
+  background: var(--lime);
+  color: var(--ink);
+}
+h1,
+h2,
+h3 {
+  letter-spacing: -0.02em;
+}
+button,
+a,
+select,
+input {
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s,
+    background-color 0.15s,
+    border-color 0.15s,
+    opacity 0.15s;
+}
+button:not(:disabled):hover {
+  cursor: pointer;
+}
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--text);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--lime) 55%, transparent);
+  outline: none;
+}
+.btn-lift:not(:disabled):hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 3px 3px 0 var(--lime);
+}
+.page-in {
+  animation: page-in 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-in {
+    animation: none;
+  }
+  html {
+    scroll-behavior: auto;
+  }
 }

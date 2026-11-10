@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import { Navigate, NavLink, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import { isAdmin, useAuth } from './auth';
 import { AcceptInvite, Login, Signup } from './pages/AuthPages';
-import { Skeleton } from './ui';
+import { Logo, Skeleton } from './ui';
 
 const Overview = lazy(() => import('./pages/Overview').then((m) => ({ default: m.Overview })));
 const Collections = lazy(() =>
@@ -124,23 +124,11 @@ function Shell() {
       <nav
         id="sidebar"
         aria-label="Main"
-        className={`${open ? 'block' : 'hidden'} w-full shrink-0 border-r border-line bg-surface p-3 md:block md:w-56`}
+        className={`${open ? 'block' : 'hidden'} w-full shrink-0 border-r border-line bg-ink p-3 text-ivory md:block md:w-60`}
       >
-        <div className="mb-4 flex items-center gap-2 px-2 font-semibold">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            aria-hidden="true"
-            stroke="var(--primary)"
-            strokeWidth="2"
-            strokeLinecap="round"
-          >
-            <path d="M4 9a8 8 0 0 1 14-3M20 5v4h-4" />
-            <path d="M20 15a8 8 0 0 1-14 3M4 19v-4h4" />
-          </svg>
-          Syncra
+        <div className="mb-5 flex items-center gap-2 px-2 text-lg font-bold tracking-tight">
+          <Logo size={28} />
+          syncra
         </div>
         <ul>
           {NAV.filter((n) => !n.admin || isAdmin(auth.active?.role)).map((n) => (
@@ -149,7 +137,7 @@ function Shell() {
                 to={n.to}
                 end={n.to === '/'}
                 className={({ isActive }) =>
-                  `mb-1 block rounded-input px-3 py-2 ${isActive ? 'bg-surface-2 font-semibold' : 'hover:bg-surface-2'}`
+                  `mb-1 block rounded-input px-3 py-2 transition-colors ${isActive ? 'bg-lime font-semibold text-ink' : 'text-ivory/80 hover:bg-white/10 hover:text-ivory'}`
                 }
               >
                 {n.label}
@@ -159,7 +147,7 @@ function Shell() {
         </ul>
       </nav>
       <div className="min-w-0 flex-1">
-        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-2">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-surface px-4 py-2">
           <div>
             {auth.memberships.length > 1 ? (
               <>
@@ -198,7 +186,12 @@ function Shell() {
             </button>
           </div>
         </header>
-        <main id="main" className="mx-auto max-w-[1200px] p-4" tabIndex={-1}>
+        <main
+          id="main"
+          key={loc.pathname}
+          className="page-in mx-auto max-w-[1200px] p-4 md:p-6"
+          tabIndex={-1}
+        >
           <Suspense fallback={<Skeleton rows={4} />}>
             <Outlet />
           </Suspense>

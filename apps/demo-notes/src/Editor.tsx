@@ -34,7 +34,7 @@ function EditorBody({ doc, id, user }: { doc: SyncraDoc; id: string; user: DemoU
       type="button"
       aria-pressed={active}
       onClick={run}
-      className={`rounded-input px-2 py-1 ${active ? 'bg-surface-2 font-semibold' : 'hover:bg-surface'}`}
+      className={`rounded-input px-2 py-1 ${active ? 'bg-lime font-semibold text-ink' : 'hover:bg-surface-2'}`}
     >
       {label}
     </button>

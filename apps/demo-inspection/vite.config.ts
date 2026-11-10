@@ -20,8 +20,8 @@ export default defineConfig({
         name: 'Syncra Field Inspection',
         short_name: 'Inspections',
         description: 'Offline-first site inspections that sync when you are back online.',
-        theme_color: '#1d4ed8',
-        background_color: '#ffffff',
+        theme_color: '#08090b',
+        background_color: '#faf8f3',
         display: 'standalone',
         icons: [
           { src: 'icon.svg', sizes: '192x192 512x512', type: 'image/svg+xml', purpose: 'any' },

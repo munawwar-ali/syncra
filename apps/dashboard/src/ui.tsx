@@ -16,10 +16,25 @@ import { ApiError } from './api';
 export const errorMessage = (e: unknown): string =>
   e instanceof ApiError ? e.message : e instanceof Error ? e.message : 'Something went wrong';
 
+export function Logo({ size = 24 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true">
+      <defs>
+        <clipPath id="syncra-logo-clip">
+          <circle cx="24" cy="32" r="18" />
+        </clipPath>
+      </defs>
+      <circle cx="24" cy="32" r="18" fill="#faf8f3" />
+      <circle cx="40" cy="32" r="18" fill="#cdf22b" />
+      <circle cx="40" cy="32" r="18" fill="#08090b" clipPath="url(#syncra-logo-clip)" />
+    </svg>
+  );
+}
+
 type Variant = 'primary' | 'secondary' | 'danger';
 const VARIANTS: Record<Variant, string> = {
-  primary: 'bg-primary text-primary-contrast',
-  secondary: 'border border-line bg-bg text-fg hover:bg-surface',
+  primary: 'btn-lift border border-primary bg-primary text-primary-contrast',
+  secondary: 'btn-lift border border-line bg-surface text-fg hover:border-fg',
   danger: 'bg-danger text-white',
 };
 
@@ -89,7 +104,7 @@ export function Card({
   children: ReactNode;
 }) {
   return (
-    <section className="mb-6 rounded-card border border-line bg-surface p-4">
+    <section className="mb-6 rounded-card border border-line bg-surface p-4 transition-colors hover:border-fg/40">
       {(title ?? actions) && (
         <div className="mb-3 flex items-center justify-between gap-2">
           {title && <h2 className="font-semibold">{title}</h2>}
@@ -104,7 +119,7 @@ export function Card({
 export function PageHeader({ title, children }: { title: string; children?: ReactNode }) {
   return (
     <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-      <h1 className="text-xl font-semibold">{title}</h1>
+      <h1 className="text-2xl font-extrabold tracking-tight">{title}</h1>
       {children}
     </div>
   );

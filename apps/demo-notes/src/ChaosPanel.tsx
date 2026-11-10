@@ -21,7 +21,7 @@ export function ChaosPanel() {
       <div className="flex flex-col gap-2">
         <button
           data-testid="chaos-offline"
-          className="rounded-input border border-line px-3 py-2 text-left hover:bg-surface"
+          className="btn-lift rounded-input border border-line bg-surface px-3 py-2 text-left hover:border-fg"
           aria-pressed={!online}
           onClick={() => {
             const goOffline = online;
@@ -32,14 +32,14 @@ export function ChaosPanel() {
           {online ? 'Go offline' : 'Go online'}
         </button>
         <button
-          className="rounded-input border border-line px-3 py-2 text-left hover:bg-surface"
+          className="btn-lift rounded-input border border-line bg-surface px-3 py-2 text-left hover:border-fg"
           aria-pressed={latency}
           onClick={toggle(!latency, setLatency, (v) => (chaos.latencyMs = v ? 2000 : 0))}
         >
           {latency ? 'Remove 2 s latency' : 'Add 2 s latency'}
         </button>
         <button
-          className="rounded-input border border-line px-3 py-2 text-left hover:bg-surface"
+          className="btn-lift rounded-input border border-line bg-surface px-3 py-2 text-left hover:border-fg"
           onClick={() => {
             client.dropConnection();
           }}
@@ -47,7 +47,7 @@ export function ChaosPanel() {
           Drop socket now
         </button>
         <button
-          className="rounded-input border border-line px-3 py-2 text-left hover:bg-surface"
+          className="btn-lift rounded-input border border-line bg-surface px-3 py-2 text-left hover:border-fg"
           aria-pressed={slow}
           onClick={toggle(!slow, setSlow, (v) => (chaos.slowConsumer = v))}
         >
