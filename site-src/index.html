@@ -678,41 +678,61 @@
     document.addEventListener('mouseleave', () => root.classList.remove('has-cursor'));
   }
 
-  /* ---- background: drifting sync network with travelling packets ---- */
+  /* ---- background: layered sync network (depth parallax, cursor links, click shockwave) ---- */
   const cv = $('#bg'), cx = cv.getContext('2d');
-  let W, H, nodes = [], packets = [], last = 0, spawn = 0;
+  let W, H, nodes = [], packets = [], waves = [], last = 0, spawn = 0, sy = 0, vy = 0;
   const LINK = 150;
   const init = () => {
     const dpr = Math.min(devicePixelRatio || 1, 2);
     W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; cx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const n = Math.min(70, Math.round(W * H / 18000));
-    nodes = Array.from({ length: n }, (_, i) => ({ x: Math.random() * W, y: Math.random() * H, vx: (Math.random() - .5) * .25, vy: (Math.random() - .5) * .25, hot: i % 7 === 0 }));
+    const n = Math.min(80, Math.round(W * H / 16000));
+    nodes = Array.from({ length: n }, (_, i) => ({ x: Math.random() * W, y: Math.random() * H, vx: (Math.random() - .5) * .25, vy: (Math.random() - .5) * .25, z: .35 + Math.random() * .65, hot: i % 7 === 0, f: 0 }));
   };
+  addEventListener('mousedown', (e) => waves.push({ x: e.clientX, y: e.clientY, r: 0 }));
   const draw = (t) => {
     const dt = Math.min(50, t - last) / 16; last = t;
+    const ns = scrollY; vy += (Math.abs(ns - sy) - vy) * .1; sy = ns;
     cx.clearRect(0, 0, W, H);
     for (const p of nodes) {
       p.x += p.vx * dt; p.y += p.vy * dt;
-      if (p.x < 0 || p.x > W) p.vx *= -1; if (p.y < 0 || p.y > H) p.vy *= -1;
-      const dx = mx - p.x, dy = my - p.y, d2 = dx * dx + dy * dy;
+      if (p.x < 0 || p.x > W) p.vx *= -1;
+      if (p.y < 0 || p.y > H) p.vy *= -1;
+      // project: nearer nodes (bigger z) move more as the page scrolls
+      p.px = p.x; p.py = (((p.y - sy * p.z * .35) % H) + H) % H;
+      const dx = mx - p.px, dy = my - p.py, d2 = dx * dx + dy * dy;
       if (d2 < 22500 && d2 > 1) { p.x += dx * .002 * dt; p.y += dy * .002 * dt; }
+      p.f = Math.max(0, p.f - .025 * dt);
     }
-    cx.lineWidth = 1;
+    waves = waves.filter((w) => (w.r += 9 * dt) < Math.max(W, H));
+    for (const w of waves) for (const p of nodes) if (Math.abs(Math.hypot(p.px - w.x, p.py - w.y) - w.r) < 14) p.f = 1;
     const edges = [];
     for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
-      const a = nodes[i], b = nodes[j], d = Math.hypot(a.x - b.x, a.y - b.y);
-      if (d < LINK) { cx.strokeStyle = `rgba(8,9,11,${(1 - d / LINK) * .13})`; cx.beginPath(); cx.moveTo(a.x, a.y); cx.lineTo(b.x, b.y); cx.stroke(); edges.push([a, b]); }
+      const a = nodes[i], b = nodes[j], d = Math.hypot(a.px - b.px, a.py - b.py);
+      if (d < LINK) {
+        const z = (a.z + b.z) / 2, f = Math.max(a.f, b.f);
+        cx.lineWidth = 1; cx.strokeStyle = f > .05 ? `rgba(120,150,0,${f * .7})` : `rgba(8,9,11,${(1 - d / LINK) * .16 * z})`;
+        cx.beginPath(); cx.moveTo(a.px, a.py); cx.lineTo(b.px, b.py); cx.stroke(); edges.push([a, b]);
+      }
     }
+    // links from the cursor to nearby nodes
     for (const p of nodes) {
-      cx.beginPath(); cx.arc(p.x, p.y, p.hot ? 4 : 2, 0, 7);
-      cx.fillStyle = p.hot ? '#CDF22B' : 'rgba(8,9,11,.35)'; cx.fill();
-      if (p.hot) { cx.strokeStyle = '#08090B'; cx.lineWidth = 1.2; cx.stroke(); }
+      const d = Math.hypot(mx - p.px, my - p.py);
+      if (d < 170) { cx.strokeStyle = `rgba(8,9,11,${(1 - d / 170) * .55})`; cx.lineWidth = 1.2; cx.beginPath(); cx.moveTo(mx, my); cx.lineTo(p.px, p.py); cx.stroke(); }
     }
-    spawn -= dt;
+    for (const w of waves) { cx.strokeStyle = `rgba(8,9,11,${.4 * (1 - w.r / Math.max(W, H))})`; cx.lineWidth = 2; cx.beginPath(); cx.arc(w.x, w.y, w.r, 0, 7); cx.stroke(); }
+    for (const p of nodes) {
+      const r = (p.hot ? 4 : 2) * (.6 + p.z * .7) + p.f * 4;
+      if (p.f > .05) { cx.beginPath(); cx.arc(p.px, p.py, r + 7 * p.f, 0, 7); cx.fillStyle = `rgba(205,242,43,${p.f * .45})`; cx.fill(); }
+      cx.beginPath(); cx.arc(p.px, p.py, r, 0, 7);
+      cx.fillStyle = p.hot || p.f > .05 ? '#CDF22B' : `rgba(8,9,11,${.18 + p.z * .3})`; cx.fill();
+      if (p.hot || p.f > .05) { cx.strokeStyle = '#08090B'; cx.lineWidth = 1.2; cx.stroke(); }
+    }
+    // packets spawn faster while the page is scrolling
+    spawn -= dt * (1 + Math.min(vy, 40) / 6);
     if (spawn <= 0 && edges.length) { packets.push({ e: edges[Math.random() * edges.length | 0], t: 0 }); spawn = 25; }
     packets = packets.filter((k) => (k.t += .012 * dt) < 1);
     for (const k of packets) {
-      const [a, b] = k.e; cx.beginPath(); cx.arc(a.x + (b.x - a.x) * k.t, a.y + (b.y - a.y) * k.t, 3.2, 0, 7);
+      const [a, b] = k.e; cx.beginPath(); cx.arc(a.px + (b.px - a.px) * k.t, a.py + (b.py - a.py) * k.t, 3.2, 0, 7);
       cx.fillStyle = '#CDF22B'; cx.fill(); cx.strokeStyle = '#08090B'; cx.lineWidth = 1; cx.stroke();
     }
     if (!reduce) requestAnimationFrame(draw);
