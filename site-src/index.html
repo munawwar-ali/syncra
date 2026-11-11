@@ -766,12 +766,23 @@
   }, { threshold: .35 }).observe(vid);
 
   /* ---- smooth scrolling ---- */
+  let lenis = null;
+  // Slow down only while the pinned "How it works" stage is on screen; normal speed everywhere else.
+  const pace = () => {
+    if (!lenis) return;
+    const r = how.getBoundingClientRect(), slow = r.top < innerHeight * .6 && r.bottom > innerHeight * .4;
+    // the wheel/touch multipliers live on Lenis' internal VirtualScroll, not on lenis.options
+    const vo = lenis.virtualScroll.options;
+    vo.wheelMultiplier = slow ? .55 : 1;
+    vo.touchMultiplier = slow ? .8 : 1;
+    lenis.options.lerp = slow ? .07 : .09;
+  };
   // Loaded after everything else, from our own host: a slow download only delays the smooth feel, never the page.
   if (!reduce) {
     const ls = document.createElement('script');
     ls.src = '/vendor/lenis.min.js';
     ls.onload = () => {
-      const lenis = new Lenis({ lerp: .07, wheelMultiplier: .55, touchMultiplier: .8, anchors: true });
+      lenis = new Lenis({ lerp: .09, anchors: true });
       const lraf = (t) => { lenis.raf(t); requestAnimationFrame(lraf); };
       requestAnimationFrame(lraf);
     };
@@ -920,6 +931,7 @@
     bar.style.transform = `scaleX(${y / Math.max(1, document.documentElement.scrollHeight - vh)})`;
     // Safety net: never leave a section invisible if the observer missed it (layout shifts, fast scrolling).
     rv.forEach((e) => { if (!e.classList.contains('in') && e.getBoundingClientRect().top < vh * .92) e.classList.add('in'); });
+    pace();
     chapters(); fillWords(); scrollbar(); dkUpdate();
     if (reduce) return;
     marq.style.transform = `translateX(${-y * .35}px)`;
