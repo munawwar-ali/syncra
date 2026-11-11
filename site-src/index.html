@@ -771,7 +771,7 @@
     const ls = document.createElement('script');
     ls.src = '/vendor/lenis.min.js';
     ls.onload = () => {
-      const lenis = new Lenis({ lerp: .09, anchors: true });
+      const lenis = new Lenis({ lerp: .07, wheelMultiplier: .55, touchMultiplier: .8, anchors: true });
       const lraf = (t) => { lenis.raf(t); requestAnimationFrame(lraf); };
       requestAnimationFrame(lraf);
     };
