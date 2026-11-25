@@ -381,10 +381,65 @@
     .flow { animation: none; }
     .ft h3 span { transition: none; }
     .sc.on, .sc.on .chips .lg.a, .sc.on .mini, .pt, .sc.on .lane i, .vid::before, .vid::after, .sc.on .cu, .sc.on .rip::before, .sc.on .rip::after, .sc.on .hub img { animation: none; }
+    #loader *, #loader *::before { animation: none !important; }
+    #loader .ld-b { stroke-dashoffset: 0; } #loader .ld-m { opacity: 1; transform: none; }
   }
+
+  /* ---- loading screen: the hero's branch-and-merge in miniature; shown only when JS runs (html.loading) ---- */
+  #loader { display: none; position: fixed; inset: 0; z-index: 10000; place-content: center; justify-items: center; gap: 1.6rem; color: var(--ivory);
+    background: radial-gradient(40% 40% at 50% 45%, #cdf22b1c, transparent 70%), radial-gradient(45% 50% at 10% 100%, #7cc4ff1f, transparent 70%), var(--ink);
+    transition: opacity .7s ease, visibility 0s .7s; }
+  html.loading #loader, html.loaded #loader { display: grid; }
+  html.loaded #loader { opacity: 0; visibility: hidden; transition-delay: .25s, .95s; }
+  /* contents leave first, then the backdrop, so the two screens never overlap as a muddle */
+  #loader > * { transition: opacity .3s ease, transform .4s ease; }
+  html.loaded #loader > * { opacity: 0; transform: scale(.96); }
+  html.loading body { overflow: hidden; }
+  #loader .brand { font-size: 1.6rem; }
+  #loader .brand img { width: 40px; height: 40px; }
+  #loader svg { width: min(18rem, 70vw); height: auto; overflow: visible; }
+  #loader path { fill: none; stroke-width: 2.5; stroke-linecap: round; }
+  .ld-a { stroke: #CDF22B; }
+  .ld-b { stroke: #7CC4FF; stroke-dasharray: 1; stroke-dashoffset: 1; animation: ld-draw 2.2s cubic-bezier(.6, 0, .3, 1) infinite; }
+  .ld-m { fill: #CDF22B; opacity: 0; transform-box: fill-box; transform-origin: center; transform: scale(0); animation: ld-merge 2.2s ease-out infinite; }
+  .ld-o { fill: #08090B; stroke: #7CC4FF; stroke-width: 2; }
+  @keyframes ld-draw { 0% { stroke-dashoffset: 1; opacity: 1; } 70% { stroke-dashoffset: 0; opacity: 1; } 92%, 100% { stroke-dashoffset: 0; opacity: 0; } }
+  @keyframes ld-merge { 0%, 66% { opacity: 0; transform: scale(0); } 74% { opacity: 1; transform: scale(1.5); } 82%, 90% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1); } }
+  #loader p { margin: 0; font: 500 .8rem "JetBrains Mono", monospace; letter-spacing: .08em; color: #C9CCD3; }
+  /* hero enters as the loader fades */
+  .top .wrap > *, #rib { transition: opacity .8s ease, transform .9s cubic-bezier(.2, .7, .2, 1); }
+  .top .wrap > nav { transition-delay: .3s; } .top .hero { transition-delay: .42s; } #rib { transition-delay: .6s; }
+  html.loading .top .wrap > *, html.loading #rib { opacity: 0; transform: translateY(16px); }
+  @media (prefers-reduced-motion: reduce) { html.loading .top .wrap > *, html.loading #rib { transform: none; } }
 </style>
+<script>
+  // Loading screen: at least 2.2 s and until the page has loaded (5 s at most), then it fades into the hero.
+  // The hero script waits for "syncra:ready" so the demo starts after the reveal, not behind the loader.
+  (() => {
+    const d = document.documentElement, t0 = performance.now();
+    d.classList.add('loading');
+    const done = () => {
+      if (!d.classList.contains('loading')) return;
+      d.classList.replace('loading', 'loaded');
+      dispatchEvent(new Event('syncra:ready'));
+      setTimeout(() => document.getElementById('loader')?.remove(), 1100);
+    };
+    addEventListener('load', () => setTimeout(done, Math.max(0, 2200 - (performance.now() - t0))), { once: true });
+    setTimeout(done, 5000);
+  })();
+</script>
 </head>
 <body>
+<div id="loader" role="status" aria-label="Loading Syncra">
+  <span class="brand"><img src="/logo.svg" alt="" width="40" height="40" />syncra</span>
+  <svg viewBox="0 0 240 70" aria-hidden="true">
+    <path class="ld-a" d="M10 22 H230" />
+    <path class="ld-b" pathLength="1" d="M70 22 C96 22 94 54 120 54 C146 54 144 22 170 22" />
+    <circle class="ld-o" cx="70" cy="22" r="4.5" />
+    <circle class="ld-m" cx="170" cy="22" r="6" />
+  </svg>
+  <p>syncing…</p>
+</div>
 <canvas id="bg" aria-hidden="true"></canvas>
 <div id="bar" aria-hidden="true"></div>
 <svg class="cur arrow" id="cur" viewBox="0 0 26 26" aria-hidden="true"><path d="M2 2 L2 20 L6.6 15.6 L10.2 23.4 L13.6 21.9 L10.1 14.2 L16.6 14.2 Z"/></svg>
@@ -878,7 +933,9 @@
   });
   if (reduce) final(); else reset();
   // start after the page has loaded and settled: DOM updates during load showed up as long tasks in Lighthouse
-  addEventListener('load', () => setTimeout(() => { settled = true; run(); loadStars(); ribbon.start(); }, 1000), { once: true });
+  // start once the loading screen has faded (see the head script); straight away if it already has
+  const startHero = () => setTimeout(() => { settled = true; run(); loadStars(); ribbon.start(); }, 600);
+  if (document.documentElement.classList.contains('loading')) addEventListener('syncra:ready', startHero, { once: true }); else startHero();
 
   /* ---- sync history ribbon ----
      A running timeline of the demo document, newest at the right edge. Lime is the server's copy (the laptop
