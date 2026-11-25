@@ -61,7 +61,7 @@
   /* ---- hero ---- */
   /* dark, lit surface: lime light from behind the demo, cool light from the phone's side, fine grain on top.
      Opaque, so the page-wide canvas does not show through. All static: painted once. */
-  .top { --sky: #7CC4FF; --rib: 150px; position: relative; color: var(--ivory); background: radial-gradient(42% 55% at 76% 40%, #cdf22b24, transparent 70%), radial-gradient(40% 50% at 12% 105%, #7cc4ff1f, transparent 70%), radial-gradient(120% 80% at 50% -10%, #1a1d24, transparent 60%), var(--ink); overflow: hidden; }
+  .top { --sky: #7CC4FF; --rib: 150px; position: relative; color: var(--ivory); background: radial-gradient(42% 55% at 76% 40%, #cdf22b2e, transparent 70%), radial-gradient(40% 50% at 12% 105%, #7cc4ff1f, transparent 70%), radial-gradient(120% 80% at 50% -10%, #1a1d24, transparent 60%), var(--ink); overflow: hidden; }
   .top::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .07; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"); }
   .top > .wrap { position: relative; z-index: 1; }
   .top nav .links { color: var(--muted-dark); }
@@ -358,7 +358,8 @@
     footer .r { margin-left: 0; }
   }
   @media (max-width: 900px) {
-    .top { --rib: 120px; }
+    /* one column: the demo sits low, so the lime light moves down behind it */
+    .top { --rib: 120px; background: radial-gradient(70% 30% at 60% 78%, #cdf22b1f, transparent 70%), radial-gradient(60% 30% at 0% 100%, #7cc4ff1f, transparent 70%), radial-gradient(120% 50% at 50% -10%, #1a1d24, transparent 60%), var(--ink); }
     .hero { grid-template-columns: minmax(0, 1fr); gap: 2.5rem; padding: 2.5rem 0 calc(var(--rib) + .5rem); }
   }
   @media (max-width: 480px) { .wide-only { display: none; } }
@@ -877,7 +878,7 @@
     if (!cx) return { start() {} }; // no canvas: the static lit background stays
     const N = 240, SECS = 11, LIME = '#CDF22B', SKY = '#7CC4FF';
     const dv = new Float32Array(N); // the phone's distance from the server line, one value per sample
-    let marks = [], W = 0, H = 0, frac = 0, cur = 0, base = 0, last = 0, on = false, vis = true, started = false, gL, gS;
+    let marks = [], W = 0, H = 0, frac = 0, cur = 0, vel = 0, odd = false, base = 0, last = 0, on = false, vis = true, started = false, gL, gS;
     const add = (kind, side, label) => marks.push({ i: N - 1, kind, side, label, t: performance.now() });
     if (!reduce) { story.edit = (onPhone) => add('edit', onPhone ? 1 : 0); story.branch = () => add('branch', 0, 'phone offline'); story.merge = () => add('merge', 0, 'merged'); }
     const draw = (now) => {
@@ -913,13 +914,15 @@
       if (!on) return;
       // performance.now(), not the rAF timestamp: mark times come from performance.now() too
       const now = performance.now(), dt = Math.min(.1, (now - last) / 1000); last = now;
-      // branch eases out; the return is quicker so the lines meet by the time the card says "merged"
-      const tgt = phase === 'offline' ? 1 : 0;
-      cur += (tgt - cur) * (1 - Math.exp(-dt * (tgt ? 3 : 5.5)));
+      // critically damped spring: an S-curve both ways; stiffer on the way back so the lines meet about when the card says "merged"
+      const tgt = phase === 'offline' ? 1 : 0, k = tgt ? 10 : 22;
+      vel += ((tgt - cur) * k - 2 * Math.sqrt(k) * vel) * dt; cur += vel * dt;
       frac += dt * (N - 2) / SECS;
       while (frac >= 1) { frac -= 1; dv.copyWithin(0, 1); base++; for (const m of marks) m.i--; }
       dv[N - 1] = cur; marks = marks.filter((m) => m.i > -2);
-      draw(now); requestAnimationFrame(tick);
+      // phones: the timeline advances every frame but is drawn every other one (30 fps)
+      if (!(W < 600 && (odd = !odd))) draw(now);
+      requestAnimationFrame(tick);
     };
     const go = () => { const want = started && vis && !reduce; if (want && !on) { on = true; last = performance.now(); requestAnimationFrame(tick); } else if (!want) on = false; };
     // reduced motion: one still frame of a full branch-and-merge
