@@ -59,22 +59,40 @@
   .rv.in { opacity: 1; transform: none; }
 
   /* ---- hero ---- */
-  .hero { text-align: center; padding: 4.5rem 0 3rem; position: relative; }
-  .pill { display: inline-block; padding: .25rem .8rem; border: 1px solid var(--ink); border-radius: 99px; font-size: .85rem; margin-bottom: 1.5rem; background: var(--ivory); }
-  h1 { font-size: clamp(2.5rem, 6.5vw, 4.5rem); line-height: 1.05; letter-spacing: -.04em; margin: 0 0 1.25rem; font-weight: 800; }
-  .hl { background: linear-gradient(transparent 58%, var(--lime) 58% 92%, transparent 92%); padding: 0 .1em; }
-  .sub { color: var(--muted); font-size: 1.2rem; max-width: 40rem; margin: 0 auto 2rem; }
+  /* opaque, so the page-wide canvas does not show behind the hero; the faint grid fades out downward */
+  .top { position: relative; background: var(--ivory); }
+  .top::before { content: ""; position: absolute; inset: 0; pointer-events: none; background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 56px 56px; opacity: .55; -webkit-mask-image: linear-gradient(#000, transparent 85%); mask-image: linear-gradient(#000, transparent 85%); }
+  .top > .wrap { position: relative; }
+  .hero { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 3.5rem; align-items: center; padding: 4rem 0 5rem; }
+  h1 { font-size: clamp(2.3rem, 4.4vw, 3.6rem); line-height: 1.04; letter-spacing: -.04em; margin: 0 0 1.25rem; font-weight: 800; text-wrap: balance; }
+  .sub { color: var(--muted); font-size: 1.12rem; max-width: 34rem; margin: 0 0 1.75rem; }
   .cta { display: flex; flex-wrap: wrap; gap: .75rem; justify-content: center; }
-  .install { display: inline-block; margin-top: 1.75rem; padding: .6rem 1rem; background: var(--ink); border-radius: .5rem; color: var(--muted-dark); font-size: .9rem; }
-  .install b { color: var(--lime); font-weight: 500; }
-  .devices { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; max-width: 46rem; margin: 3rem auto 0; text-align: left; }
-  .dev { background: var(--ink); color: var(--ivory); border-radius: .75rem; padding: 1rem; box-shadow: 6px 6px 0 var(--lime); }
-  .dev header { display: flex; justify-content: space-between; font-size: .8rem; color: var(--muted-dark); margin-bottom: .6rem; }
-  .dev p { margin: 0; font-size: .9rem; min-height: 3em; }
-  .dev .edit { color: var(--lime); }
-  .st { display: inline-flex; align-items: center; gap: .35rem; }
-  .st::before { content: ""; width: .5rem; height: .5rem; border-radius: 50%; background: var(--lime); }
-  .st.off::before { background: var(--muted-dark); }
+  .hero .cta { justify-content: flex-start; }
+  .clone { display: flex; align-items: stretch; max-width: 34rem; margin-top: 1.75rem; background: var(--ink); border-radius: .5rem; font-size: .82rem; }
+  .clone code { flex: 1; min-width: 0; padding: .7rem .9rem; color: var(--ivory); white-space: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .clone code::before { content: "$ "; color: var(--lime); }
+  .clone button { flex: none; width: 4.6rem; padding: 0; border: 0; border-left: 1px solid #262a33; border-radius: 0 .5rem .5rem 0; background: none; color: var(--muted-dark); font: 500 .8rem Inter, sans-serif; }
+  .clone button:hover { color: var(--lime); }
+  .facts { display: flex; flex-wrap: wrap; gap: .3rem 1.4rem; margin: 1.1rem 0 0; padding: 0; list-style: none; color: var(--muted); font-size: .88rem; }
+  .facts a { text-decoration: underline; text-underline-offset: 3px; }
+  .facts a:hover { color: var(--ink); }
+  /* simulated pair of clients; real checkboxes, scripted transport */
+  .sim { border: 1px solid var(--ink); border-radius: .75rem; overflow: hidden; background: var(--ink); color: var(--ivory); box-shadow: 8px 8px 0 var(--lime); }
+  .sim-bar { display: flex; justify-content: space-between; gap: 1rem; padding: .55rem .9rem; background: var(--ink-2); color: var(--muted-dark); font: .75rem "JetBrains Mono", monospace; }
+  .sim-devs { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; padding: .9rem; }
+  .dev { background: var(--ink-2); border: 1px solid #262a33; border-radius: .6rem; padding: .8rem; transition: border-color .4s; }
+  .dev.pulse { border-color: var(--lime); }
+  .dev-h { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .2rem .5rem; margin-bottom: .6rem; font-size: .8rem; font-weight: 600; }
+  .st { display: inline-flex; align-items: center; gap: .35rem; color: var(--muted-dark); font: .72rem "JetBrains Mono", monospace; }
+  .st::before { content: ""; width: .45rem; height: .45rem; border-radius: 50%; background: var(--lime); }
+  .st.off::before { background: none; box-shadow: inset 0 0 0 1.5px var(--muted-dark); }
+  .dev label { display: flex; align-items: center; gap: .5rem; padding: .28rem 0; font-size: .9rem; }
+  .dev input { width: 1rem; height: 1rem; margin: 0; accent-color: var(--lime); }
+  .net { width: 100%; margin-top: .6rem; padding: .4rem; border: 1px solid #3a3f4a; border-radius: .4rem; background: none; color: var(--ivory); font: 500 .8rem Inter, sans-serif; }
+  .net:hover, .net[aria-pressed=true] { border-color: var(--lime); }
+  .dev small { display: block; margin-top: .6rem; padding: .4rem 0; color: var(--muted-dark); font-size: .8rem; border: 1px solid transparent; }
+  .sim-log { margin: 0; padding: .7rem .9rem; min-height: 4.6em; border-top: 1px solid #262a33; border-radius: 0; background: none; font-size: .75rem; white-space: pre-wrap; }
+  .hero button:focus-visible, .hero input:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
 
   /* ---- section basics ---- */
   section { padding: 4.5rem 0; }
@@ -311,14 +329,18 @@
   footer a:hover { color: var(--lime); }
 
   @media (max-width: 760px) {
-    nav .links a:not(.btn) { display: none; }
-    .devices, .shots, .two, .split { grid-template-columns: 1fr; }
+    nav .links a:not(.gh) { display: none; }
+    .shots, .two, .split { grid-template-columns: 1fr; }
     .row { grid-template-columns: 1fr; gap: .2rem; }
     .row:first-child { display: none; }
     footer .r { margin-left: 0; }
   }
+  @media (max-width: 900px) {
+    .hero { grid-template-columns: minmax(0, 1fr); gap: 2.5rem; padding: 2.5rem 0 3.5rem; }
+  }
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
+    .dev { transition: none; }
     .rv { opacity: 1; transform: none; transition: none; }
     .flow { animation: none; }
     .ft h3 span { transition: none; }
@@ -332,9 +354,9 @@
 <svg class="cur arrow" id="cur" viewBox="0 0 26 26" aria-hidden="true"><path d="M2 2 L2 20 L6.6 15.6 L10.2 23.4 L13.6 21.9 L10.1 14.2 L16.6 14.2 Z"/></svg>
 <svg class="cur hand" id="hand" viewBox="0 0 26 26" aria-hidden="true"><path d="M8.5 2 L12 2 L12 10 L15 10 L15 11.5 L18 11.5 L18 13 L21 13 L21 22 L18.5 25 L11 25 L5.5 17 L5.5 14.5 L8.5 16.5 Z"/></svg>
 
-<div class="wrap">
+<div class="top"><div class="wrap">
   <nav aria-label="Main">
-    <a class="brand" href="/"><img src="/logo.svg" alt="" />syncra</a>
+    <a class="brand" href="/"><img src="/logo.svg" alt="" width="30" height="30" />syncra</a>
     <div class="links">
       <a href="#story">Watch</a>
       <a href="#problem">Why</a>
@@ -342,26 +364,38 @@
       <a href="#features">Features</a>
       <a href="/docs/">Docs</a>
       <a class="gh" href="https://github.com/munawwar-ali/syncra">GitHub</a>
-      <a class="btn primary" href="/docs/getting-started.html">Get started</a>
     </div>
   </nav>
 
   <header class="hero">
-    <span class="pill rv">Open source · Apache-2.0 · Built on Yjs</span>
-    <h1 class="rv" style="--d:.08s">Offline-first sync,<br /><span class="hl">without the lock-in.</span></h1>
-    <p class="sub rv" style="--d:.16s">Syncra is a self-hostable sync engine: a server, a client SDK and a dashboard. Your app keeps working with no network, and merges cleanly when it comes back.</p>
-    <div class="cta rv" style="--d:.24s">
-      <a class="btn primary" href="/docs/getting-started.html">Get started</a>
-      <a class="btn" href="/notes/">Try the live demo</a>
+    <div>
+      <h1>Sync that works when the network doesn't.</h1>
+      <p class="sub">Syncra is an open-source sync engine you host yourself: a server, a client SDK and a dashboard. Edits are saved on the device first, sent when there is a connection, and merged by Yjs.</p>
+      <div class="cta">
+        <a class="btn primary" href="/docs/getting-started.html">Get started</a>
+        <a class="btn" href="/notes/">Open the live demo</a>
+      </div>
+      <div class="clone mono">
+        <code id="cmd" tabindex="0" aria-label="Command to run Syncra locally">git clone https://github.com/munawwar-ali/syncra.git &amp;&amp; cd syncra &amp;&amp; pnpm install &amp;&amp; pnpm dev</code>
+        <button type="button" id="cp" aria-label="Copy command">Copy</button>
+      </div>
+      <ul class="facts">
+        <li>Apache-2.0</li>
+        <li>Merging by <a href="https://yjs.dev">Yjs</a></li>
+        <li>Stored in your PostgreSQL</li>
+      </ul>
     </div>
-    <div class="install mono rv" style="--d:.3s"><b>$</b> git clone https://github.com/munawwar-ali/syncra &amp;&amp; pnpm install &amp;&amp; pnpm dev</div>
 
-    <div class="devices" aria-label="Two devices editing the same note" data-speed=".04">
-      <div class="dev"><header><span>Laptop</span><span class="st">online</span></header><p id="d1"></p></div>
-      <div class="dev"><header><span>Phone</span><span class="st" id="phSt">offline</span></header><p id="d2"></p></div>
+    <div class="sim" id="sim" role="group" aria-label="Simulation: a laptop and a phone editing the same inspection checklist. Take the phone offline, tick boxes on both, then reconnect.">
+      <div class="sim-bar"><span>inspections / site-0412</span><span>simulation</span></div>
+      <div class="sim-devs">
+        <div class="dev"><div class="dev-h"><span>Laptop</span><span class="st"></span></div><small>Stays connected</small></div>
+        <div class="dev"><div class="dev-h"><span>Phone</span><span class="st"></span></div><button type="button" class="net" aria-pressed="false">Go offline</button></div>
+      </div>
+      <pre class="sim-log mono" id="simLog"></pre>
     </div>
   </header>
-</div>
+</div></div>
 
 <div class="strip" aria-hidden="true"><div id="marq"><span>Offline-first</span><span>Yjs CRDTs</span><span>Self-hostable</span><span>Multi-tenant</span><span>Delta sync</span><span>Audit log</span><span>Offline-first</span><span>Yjs CRDTs</span><span>Self-hostable</span><span>Multi-tenant</span><span>Delta sync</span><span>Audit log</span></div></div>
 
@@ -715,17 +749,67 @@
   }
 
   /* ---- hero devices: edit offline, reconnect, merge ---- */
-  const d1 = $('#d1'), d2 = $('#d2'), phSt = $('#phSt');
-  const frames = [
-    () => { d1.innerHTML = 'Roof <span class="edit">inspected, no leaks</span>'; d2.textContent = 'Roof'; phSt.className = 'st off'; phSt.textContent = 'offline'; },
-    () => { d2.innerHTML = 'Roof <span class="edit">+ 3 photos queued</span>'; phSt.textContent = 'offline · 1 edit queued'; },
-    () => { phSt.className = 'st'; phSt.textContent = 'reconnecting…'; },
-    () => { const m = 'Roof <span class="edit">inspected, no leaks + 3 photos</span>'; d1.innerHTML = m; d2.innerHTML = m; phSt.textContent = 'online · merged'; },
-  ];
-  let fi = 0;
-  const tick = () => { frames[fi](); fi = (fi + 1) % frames.length; };
-  tick();
-  if (!reduce) setInterval(tick, 2200); else { fi = 3; tick(); }
+  // shortcut: scripted stand-in for the SDK (per-key last write wins, as Yjs does for map keys), not Yjs itself; swap in the real client if this ever needs text merging
+  const sim = $('#sim'), simLog = $('#simLog'), net = sim.querySelector('.net');
+  const KEYS = { roof: 'Roof', wiring: 'Wiring', exits: 'Fire exits' };
+  let clock = 0, online = true, syncing = false;
+  const HINT = '// Tick a box on either device,\n// or take the phone offline first.';
+  const devs = [...sim.querySelectorAll('.dev')].map((el, i) => {
+    const d = { el, st: el.querySelector('.st'), vals: {}, pend: new Set(), box: {} };
+    for (const k in KEYS) {
+      const lab = document.createElement('label'), inp = document.createElement('input');
+      inp.type = 'checkbox'; inp.addEventListener('change', () => write(i, k, inp.checked));
+      lab.append(inp, KEYS[k]); el.insertBefore(lab, el.lastElementChild); d.box[k] = inp;
+    }
+    return d;
+  });
+  const paint = () => {
+    devs.forEach((d, i) => {
+      for (const k in KEYS) d.box[k].checked = !!d.vals[k]?.[0];
+      const off = i === 1 && !online;
+      d.st.className = 'st' + (off ? ' off' : '');
+      d.st.textContent = off ? `offline · ${d.pend.size} unsynced` : i === 1 && syncing ? 'syncing' : 'live';
+    });
+    net.textContent = online ? 'Go offline' : 'Reconnect'; net.setAttribute('aria-pressed', String(!online));
+  };
+  // both copies take the newest write for each key
+  const merge = () => {
+    for (const k in KEYS) { const n = devs.map((d) => d.vals[k]).sort((a, b) => (b?.[1] ?? 0) - (a?.[1] ?? 0))[0]; if (n) devs.forEach((d) => (d.vals[k] = n)); }
+    devs.forEach((d) => { d.pend.clear(); d.el.classList.add('pulse'); setTimeout(() => d.el.classList.remove('pulse'), 600); });
+  };
+  const write = (i, k, v) => {
+    devs[i].vals[k] = [v, ++clock];
+    let note = 'sent, acknowledged, broadcast';
+    if (online) setTimeout(() => { if (online) { merge(); paint(); } }, 350);
+    else { devs[i].pend.add(k); note = i ? `saved on the phone, ${devs[1].pend.size} unsynced` : 'sent; the phone will get it on reconnect'; }
+    simLog.textContent = `doc.setFields({ ${k}: ${v} })\n// ${i ? 'phone' : 'laptop'}: ${note}`;
+    paint();
+  };
+  const setOnline = (on) => {
+    if (on === online) return;
+    online = on;
+    if (!on) simLog.textContent = '// phone: connection lost. Edits keep working\n// and are stored in IndexedDB.';
+    else {
+      const [a, b] = devs.map((d) => d.pend), both = [...b].filter((k) => a.has(k));
+      syncing = true;
+      simLog.textContent = `// phone reconnected: ${b.size} sent, ${a.size} received`;
+      setTimeout(() => { syncing = false; merge(); simLog.textContent += '\n// both copies are equal' + (both.length ? `\n// ${both.join(', ')}: edited on both, last write kept` : ''); paint(); }, reduce ? 0 : 700);
+    }
+    paint();
+  };
+  net.addEventListener('click', () => setOnline(!online));
+  // plays a short script until the visitor touches it
+  const script = [() => write(0, 'roof', true), () => setOnline(false), () => write(1, 'wiring', true), () => write(0, 'exits', true), () => setOnline(true), () => {}, () => { devs.forEach((d) => (d.vals = {})); simLog.textContent = HINT; paint(); }];
+  let si = 0, auto = reduce ? 0 : setInterval(() => script[si++ % script.length](), 1700);
+  const takeOver = () => { clearInterval(auto); simLog.setAttribute('aria-live', 'polite'); };
+  sim.addEventListener('pointerdown', takeOver, { once: true }); sim.addEventListener('keydown', takeOver, { once: true });
+  simLog.textContent = HINT;
+  if (reduce) { write(0, 'roof', true); write(1, 'wiring', true); merge(); }
+  paint();
+
+  $('#cp').addEventListener('click', (e) => {
+    navigator.clipboard.writeText($('#cmd').textContent).then(() => { e.target.textContent = 'Copied'; setTimeout(() => (e.target.textContent = 'Copy'), 1500); }, () => { e.target.textContent = 'Failed'; });
+  });
 
   /* ---- motion explainer ---- */
   const vid = $('#vid'), scs = [...vid.querySelectorAll('.sc')], vp = $('#vp'), vf = $('#vf'), vm = $('#vm'), vt = $('#vt');
@@ -1017,9 +1101,6 @@
     if (!reduce) requestAnimationFrame(draw);
   };
   init(); addEventListener('resize', init);
-  // Same shockwave as a click, fired from behind the hero on every visit and reload.
-  const welcome = () => waves.push({ x: W / 2, y: H * 0.38, r: 0 });
-  setTimeout(welcome, 250); setTimeout(welcome, 900);
   requestAnimationFrame(draw);
 })();
 </script>
