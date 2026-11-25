@@ -81,17 +81,25 @@
   .sim-bar { display: flex; justify-content: space-between; gap: 1rem; padding: .55rem .9rem; background: var(--ink-2); color: var(--muted-dark); font: .75rem "JetBrains Mono", monospace; }
   .sim-devs { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; padding: .9rem; }
   .dev { background: var(--ink-2); border: 1px solid #262a33; border-radius: .6rem; padding: .8rem; transition: border-color .4s; }
-  .dev.pulse { border-color: var(--lime); }
-  .dev-h { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .2rem .5rem; margin-bottom: .6rem; font-size: .8rem; font-weight: 600; }
+  .dev.pulse { border-color: var(--lime); box-shadow: 0 0 0 3px #cdf22b26; }
+  .dev-h { display: grid; gap: .1rem; margin-bottom: .5rem; font-size: .8rem; font-weight: 600; }
+  .sim-r { display: flex; align-items: center; gap: .75rem; }
+  .replay { padding: .05rem .5rem; border: 1px solid #3a3f4a; border-radius: .3rem; background: none; color: var(--muted-dark); font: inherit; }
+  .replay:hover { color: var(--lime); border-color: var(--lime); }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .st { display: inline-flex; align-items: center; gap: .35rem; color: var(--muted-dark); font: .72rem "JetBrains Mono", monospace; }
   .st::before { content: ""; width: .45rem; height: .45rem; border-radius: 50%; background: var(--lime); }
-  .st.off::before { background: none; box-shadow: inset 0 0 0 1.5px var(--muted-dark); }
+  .st.offline::before { background: none; box-shadow: inset 0 0 0 1.5px var(--muted-dark); }
+  .st.syncing::before { animation: blink .5s ease-in-out infinite alternate; }
+  .st.merged { color: var(--lime); }
+  @keyframes blink { to { opacity: .2; } }
   .dev label { display: flex; align-items: center; gap: .5rem; padding: .28rem 0; font-size: .9rem; }
   .dev input { width: 1rem; height: 1rem; margin: 0; accent-color: var(--lime); }
   .net { width: 100%; margin-top: .6rem; padding: .4rem; border: 1px solid #3a3f4a; border-radius: .4rem; background: none; color: var(--ivory); font: 500 .8rem Inter, sans-serif; }
   .net:hover, .net[aria-pressed=true] { border-color: var(--lime); }
   .dev small { display: block; margin-top: .6rem; padding: .4rem 0; color: var(--muted-dark); font-size: .8rem; border: 1px solid transparent; }
-  .sim-log { margin: 0; padding: .7rem .9rem; min-height: 4.6em; border-top: 1px solid #262a33; border-radius: 0; background: none; font-size: .75rem; white-space: pre-wrap; }
+  /* fixed at three lines so log changes never resize the card */
+  .sim-log { margin: 0; padding: .7rem .9rem; height: calc(3 * 1.7em + 1.4rem); overflow: hidden; border-top: 1px solid #262a33; border-radius: 0; background: none; font-size: .75rem; white-space: pre-wrap; }
   .hero button:focus-visible, .hero input:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
 
   /* ---- section basics ---- */
@@ -341,6 +349,7 @@
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     .dev { transition: none; }
+    .st.syncing::before { animation: none; }
     .rv { opacity: 1; transform: none; transition: none; }
     .flow { animation: none; }
     .ft h3 span { transition: none; }
@@ -386,13 +395,14 @@
       </ul>
     </div>
 
-    <div class="sim" id="sim" role="group" aria-label="Simulation: a laptop and a phone editing the same inspection checklist. Take the phone offline, tick boxes on both, then reconnect.">
-      <div class="sim-bar"><span>inspections / site-0412</span><span>simulation</span></div>
+    <div class="sim" id="sim" role="group" aria-label="Simulation: a laptop and a phone editing the same inspection checklist. It plays by itself; tick a box or take the phone offline to take over.">
+      <div class="sim-bar"><span>inspections / site-0412</span><span class="sim-r"><span>simulation</span><button type="button" class="replay" id="replay">Replay</button></span></div>
       <div class="sim-devs">
         <div class="dev"><div class="dev-h"><span>Laptop</span><span class="st"></span></div><small>Stays connected</small></div>
         <div class="dev"><div class="dev-h"><span>Phone</span><span class="st"></span></div><button type="button" class="net" aria-pressed="false">Go offline</button></div>
       </div>
       <pre class="sim-log mono" id="simLog"></pre>
+      <p class="sr" id="simSay" aria-live="polite"></p>
     </div>
   </header>
 </div></div>
@@ -750,15 +760,18 @@
 
   /* ---- hero devices: edit offline, reconnect, merge ---- */
   // shortcut: scripted stand-in for the SDK (per-key last write wins, as Yjs does for map keys), not Yjs itself; swap in the real client if this ever needs text merging
-  const sim = $('#sim'), simLog = $('#simLog'), net = sim.querySelector('.net');
+  const sim = $('#sim'), simLog = $('#simLog'), net = sim.querySelector('.net'), say = $('#simSay');
   const KEYS = { roof: 'Roof', wiring: 'Wiring', exits: 'Fire exits' };
-  let clock = 0, online = true, syncing = false;
-  const HINT = '// Tick a box on either device,\n// or take the phone offline first.';
+  // phase is the phone's status: live | offline | syncing | merged
+  let clock = 0, online = true, phase = 'live', playing = false;
+  const log = (t) => (simLog.textContent = t);
+  // status changes go to screen readers only when the visitor is driving, not during the loop
+  const announce = (t) => { if (!playing) say.textContent = t; };
   const devs = [...sim.querySelectorAll('.dev')].map((el, i) => {
     const d = { el, st: el.querySelector('.st'), vals: {}, pend: new Set(), box: {} };
     for (const k in KEYS) {
       const lab = document.createElement('label'), inp = document.createElement('input');
-      inp.type = 'checkbox'; inp.addEventListener('change', () => write(i, k, inp.checked));
+      inp.type = 'checkbox'; inp.addEventListener('change', () => { takeOver(); write(i, k, inp.checked); });
       lab.append(inp, KEYS[k]); el.insertBefore(lab, el.lastElementChild); d.box[k] = inp;
     }
     return d;
@@ -766,46 +779,73 @@
   const paint = () => {
     devs.forEach((d, i) => {
       for (const k in KEYS) d.box[k].checked = !!d.vals[k]?.[0];
-      const off = i === 1 && !online;
-      d.st.className = 'st' + (off ? ' off' : '');
-      d.st.textContent = off ? `offline · ${d.pend.size} unsynced` : i === 1 && syncing ? 'syncing' : 'live';
+      const s = i === 1 || phase === 'merged' ? phase : 'live';
+      d.st.className = 'st ' + s;
+      d.st.textContent = s === 'offline' ? `offline · ${d.pend.size} unsynced` : s;
     });
     net.textContent = online ? 'Go offline' : 'Reconnect'; net.setAttribute('aria-pressed', String(!online));
   };
   // both copies take the newest write for each key
-  const merge = () => {
+  const merge = (flash) => {
     for (const k in KEYS) { const n = devs.map((d) => d.vals[k]).sort((a, b) => (b?.[1] ?? 0) - (a?.[1] ?? 0))[0]; if (n) devs.forEach((d) => (d.vals[k] = n)); }
-    devs.forEach((d) => { d.pend.clear(); d.el.classList.add('pulse'); setTimeout(() => d.el.classList.remove('pulse'), 600); });
+    devs.forEach((d) => { d.pend.clear(); if (flash && !reduce) { d.el.classList.add('pulse'); setTimeout(() => d.el.classList.remove('pulse'), 1600); } });
   };
   const write = (i, k, v) => {
     devs[i].vals[k] = [v, ++clock];
-    let note = 'sent, acknowledged, broadcast';
-    if (online) setTimeout(() => { if (online) { merge(); paint(); } }, 350);
-    else { devs[i].pend.add(k); note = i ? `saved on the phone, ${devs[1].pend.size} unsynced` : 'sent; the phone will get it on reconnect'; }
-    simLog.textContent = `doc.setFields({ ${k}: ${v} })\n// ${i ? 'phone' : 'laptop'}: ${note}`;
+    const call = `doc.setFields({ ${k}: ${v} })\n// `;
+    if (online) {
+      if (phase !== 'syncing') phase = 'live';
+      setTimeout(() => { if (online) { merge(); paint(); } }, 350);
+      log(call + (i ? 'phone' : 'laptop') + ': sent and broadcast');
+    } else { devs[i].pend.add(k); log(call + (i ? 'phone: saved on device, queued' : 'laptop: saved; phone is offline')); }
     paint();
   };
   const setOnline = (on) => {
     if (on === online) return;
     online = on;
-    if (!on) simLog.textContent = '// phone: connection lost. Edits keep working\n// and are stored in IndexedDB.';
+    if (!on) { phase = 'offline'; log('// phone: connection lost\n// edits are kept in IndexedDB'); announce('Phone offline. Edits are kept on the device.'); }
     else {
-      const [a, b] = devs.map((d) => d.pend), both = [...b].filter((k) => a.has(k));
-      syncing = true;
-      simLog.textContent = `// phone reconnected: ${b.size} sent, ${a.size} received`;
-      setTimeout(() => { syncing = false; merge(); simLog.textContent += '\n// both copies are equal' + (both.length ? `\n// ${both.join(', ')}: edited on both, last write kept` : ''); paint(); }, reduce ? 0 : 700);
+      const [a, b] = devs.map((d) => d.pend), both = [...b].filter((k) => a.has(k)).length;
+      phase = 'syncing'; log(`// reconnected: ${b.size} sent, ${a.size} received`); announce('Phone reconnected, syncing.');
+      const done = () => {
+        if (phase !== 'syncing') return;
+        phase = 'merged'; merge(true);
+        simLog.textContent += '\n// merged: both copies are equal' + (both ? `\n// ${both} edited on both: newest kept` : '');
+        announce('Merged. Both copies are equal.'); paint();
+      };
+      if (reduce) done(); else setTimeout(done, 900);
     }
     paint();
   };
-  net.addEventListener('click', () => setOnline(!online));
-  // plays a short script until the visitor touches it
-  const script = [() => write(0, 'roof', true), () => setOnline(false), () => write(1, 'wiring', true), () => write(0, 'exits', true), () => setOnline(true), () => {}, () => { devs.forEach((d) => (d.vals = {})); simLog.textContent = HINT; paint(); }];
-  let si = 0, auto = reduce ? 0 : setInterval(() => script[si++ % script.length](), 1700);
-  const takeOver = () => { clearInterval(auto); simLog.setAttribute('aria-live', 'polite'); };
-  sim.addEventListener('pointerdown', takeOver, { once: true }); sim.addEventListener('keydown', takeOver, { once: true });
-  simLog.textContent = HINT;
-  if (reduce) { write(0, 'roof', true); write(1, 'wiring', true); merge(); }
-  paint();
+  const reset = () => { clock = 0; online = true; phase = 'live'; devs.forEach((d) => { d.vals = {}; d.pend.clear(); }); log('// one document, two devices'); paint(); };
+  net.addEventListener('click', () => { takeOver(); setOnline(!online); });
+
+  // autoplay: runs while in view; hover or focus pauses it, touching a control ends it until Replay
+  const steps = [[800, reset], [1500, () => write(0, 'roof', true)], [1500, () => setOnline(false)], [1500, () => write(1, 'wiring', true)], [1700, () => write(0, 'exits', true)], [3400, () => setOnline(true)]];
+  let si = 0, timer = 0, seen = false, hover = false, focused = false, taken = reduce;
+  const next = () => { const [ms, fn] = steps[si]; fn(); si = (si + 1) % steps.length; timer = setTimeout(next, ms); };
+  const run = () => {
+    const go = seen && !hover && !focused && !taken;
+    if (go && !playing) { playing = true; timer = setTimeout(next, 300); }
+    else if (!go && playing) { playing = false; clearTimeout(timer); }
+  };
+  function takeOver() { taken = true; run(); }
+  sim.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') { hover = true; run(); } });
+  sim.addEventListener('pointerleave', () => { hover = false; run(); });
+  sim.addEventListener('focusin', () => { focused = true; run(); });
+  sim.addEventListener('focusout', (e) => { if (!sim.contains(e.relatedTarget)) { focused = false; run(); } });
+  // reduced motion: no loop, just the end state with a caption
+  const final = () => {
+    reset(); write(0, 'roof', true); setOnline(false); write(1, 'wiring', true); write(0, 'exits', true); setOnline(true);
+    log('// the phone went offline, both devices\n// edited, then it reconnected and the\n// copies merged'); say.textContent = '';
+  };
+  $('#replay').addEventListener('click', () => {
+    if (reduce) return final();
+    clearTimeout(timer); playing = false; si = 0; taken = hover = focused = false; run();
+  });
+  if (reduce) final(); else reset();
+  if ('IntersectionObserver' in window) new IntersectionObserver(([e]) => { seen = e.isIntersecting; run(); }, { threshold: .35 }).observe(sim);
+  else { seen = true; run(); }
 
   $('#cp').addEventListener('click', (e) => {
     navigator.clipboard.writeText($('#cmd').textContent).then(() => { e.target.textContent = 'Copied'; setTimeout(() => (e.target.textContent = 'Copy'), 1500); }, () => { e.target.textContent = 'Failed'; });
