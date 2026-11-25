@@ -385,35 +385,48 @@
     #loader .ld-b { stroke-dashoffset: 0; } #loader .ld-m { opacity: 1; transform: none; }
   }
 
-  /* ---- loading screen: the hero's branch-and-merge in miniature; shown only when JS runs (html.loading) ---- */
-  #loader { display: none; position: fixed; inset: 0; z-index: 10000; place-content: center; justify-items: center; gap: 1.6rem; color: var(--ivory);
-    background: radial-gradient(40% 40% at 50% 45%, #cdf22b1c, transparent 70%), radial-gradient(45% 50% at 10% 100%, #7cc4ff1f, transparent 70%), var(--ink);
-    transition: opacity .7s ease, visibility 0s .7s; }
+  /* ---- loading screen: the hero's branch-and-merge in miniature; shown only when JS runs (html.loading) ----
+     Exit: the screen lifts like a curtain with a lit lime edge, and the hero comes into focus underneath. */
+  #loader { display: none; position: fixed; inset: 0; z-index: 10000; place-content: center; justify-items: center; gap: 2rem; color: var(--ivory);
+    background: radial-gradient(45% 40% at 50% 48%, #cdf22b21, transparent 70%), radial-gradient(45% 50% at 8% 100%, #7cc4ff24, transparent 70%), var(--ink);
+    transition: transform 1s cubic-bezier(.76, 0, .24, 1) .1s, visibility 0s 1.15s; }
   html.loading #loader, html.loaded #loader { display: grid; }
-  html.loaded #loader { opacity: 0; visibility: hidden; transition-delay: .25s, .95s; }
-  /* contents leave first, then the backdrop, so the two screens never overlap as a muddle */
-  #loader > * { transition: opacity .3s ease, transform .4s ease; }
-  html.loaded #loader > * { opacity: 0; transform: scale(.96); }
+  html.loaded #loader { transform: translateY(-100%); visibility: hidden; }
+  /* the curtain's bottom edge: a lime line that sweeps up over the page */
+  #loader::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--lime); box-shadow: 0 0 16px 2px #cdf22bb3, 0 0 70px 10px #cdf22b4d; opacity: 0; transition: opacity .2s ease .05s; }
+  html.loaded #loader::after { opacity: 1; }
+  #loader > * { transition: opacity .3s ease, transform .45s cubic-bezier(.5, 0, .75, 0); }
+  html.loaded #loader > * { opacity: 0; transform: translateY(-24px); }
   html.loading body { overflow: hidden; }
-  #loader .brand { font-size: 1.6rem; }
-  #loader .brand img { width: 40px; height: 40px; }
-  #loader svg { width: min(18rem, 70vw); height: auto; overflow: visible; }
-  #loader path { fill: none; stroke-width: 2.5; stroke-linecap: round; }
-  .ld-a { stroke: #CDF22B; }
-  .ld-b { stroke: #7CC4FF; stroke-dasharray: 1; stroke-dashoffset: 1; animation: ld-draw 2.2s cubic-bezier(.6, 0, .3, 1) infinite; }
-  .ld-m { fill: #CDF22B; opacity: 0; transform-box: fill-box; transform-origin: center; transform: scale(0); animation: ld-merge 2.2s ease-out infinite; }
-  .ld-o { fill: #08090B; stroke: #7CC4FF; stroke-width: 2; }
+  #loader .brand { font-size: 2rem; gap: .75rem; }
+  #loader .brand img { width: 48px; height: 48px; }
+  /* the server line runs edge to edge; the branch sits on it, centred */
+  .ld-track { --w: min(40rem, 88vw); position: relative; width: 100vw; display: grid; justify-items: center; }
+  .ld-track::before { content: ""; position: absolute; left: 0; right: 0; top: calc(var(--w) * .055 - 1.5px); height: 3px; background: var(--lime); box-shadow: 0 0 14px #cdf22b99, 0 0 40px #cdf22b33; transform-origin: 0 50%; animation: ld-line .9s cubic-bezier(.6, 0, .2, 1) both; }
+  #loader svg { position: relative; width: var(--w); height: auto; overflow: visible; }
+  #loader path { fill: none; stroke-width: 3.5; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+  .ld-b { stroke: #7CC4FF; stroke-dasharray: 1; stroke-dashoffset: 1; filter: drop-shadow(0 0 6px #7cc4ff80); animation: ld-draw 2.2s cubic-bezier(.6, 0, .3, 1) .5s infinite both; }
+  .ld-m { fill: #CDF22B; opacity: 0; transform-box: fill-box; transform-origin: center; transform: scale(0); animation: ld-merge 2.2s ease-out .5s infinite both; }
+  .ld-o { fill: #08090B; stroke: #7CC4FF; stroke-width: 3; vector-effect: non-scaling-stroke; }
+  @keyframes ld-line { from { transform: scaleX(0); } }
   @keyframes ld-draw { 0% { stroke-dashoffset: 1; opacity: 1; } 70% { stroke-dashoffset: 0; opacity: 1; } 92%, 100% { stroke-dashoffset: 0; opacity: 0; } }
-  @keyframes ld-merge { 0%, 66% { opacity: 0; transform: scale(0); } 74% { opacity: 1; transform: scale(1.5); } 82%, 90% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1); } }
-  #loader p { margin: 0; font: 500 .8rem "JetBrains Mono", monospace; letter-spacing: .08em; color: #C9CCD3; }
-  /* hero enters as the loader fades */
-  .top .wrap > *, #rib { transition: opacity .8s ease, transform .9s cubic-bezier(.2, .7, .2, 1); }
-  .top .wrap > nav { transition-delay: .3s; } .top .hero { transition-delay: .42s; } #rib { transition-delay: .6s; }
-  html.loading .top .wrap > *, html.loading #rib { opacity: 0; transform: translateY(16px); }
-  @media (prefers-reduced-motion: reduce) { html.loading .top .wrap > *, html.loading #rib { transform: none; } }
+  @keyframes ld-merge { 0%, 66% { opacity: 0; transform: scale(0); } 74% { opacity: 1; transform: scale(1.6); } 82%, 90% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1); } }
+  #loader p { margin: 0; font: 500 .85rem "JetBrains Mono", monospace; letter-spacing: .12em; color: #C9CCD3; }
+  /* the hero waits blurred, dimmed and slightly zoomed under the curtain, then focuses as it lifts; its parts rise in after */
+  .top { transition: filter 1.1s ease .45s, transform 1.4s cubic-bezier(.2, .7, .2, 1) .35s; }
+  html.loading .top { filter: blur(18px) brightness(.55); transform: scale(1.07); }
+  .top .wrap > *, #rib { transition: opacity .8s ease, transform 1s cubic-bezier(.2, .7, .2, 1); }
+  .top .wrap > nav { transition-delay: .6s; } .top .hero { transition-delay: .72s; } #rib { transition-delay: .9s; }
+  html.loading .top .wrap > *, html.loading #rib { opacity: 0; transform: translateY(28px); }
+  @media (prefers-reduced-motion: reduce) {
+    #loader { transition: opacity .4s ease, visibility 0s .4s; }
+    html.loaded #loader { transform: none; opacity: 0; }
+    html.loading .top { filter: none; transform: none; }
+    html.loading .top .wrap > *, html.loading #rib { transform: none; }
+  }
 </style>
 <script>
-  // Loading screen: at least 2.2 s and until the page has loaded (5 s at most), then it fades into the hero.
+  // Loading screen: at least 2.2 s and until the page has loaded (5 s at most), then it lifts off the hero.
   // The hero script waits for "syncra:ready" so the demo starts after the reveal, not behind the loader.
   (() => {
     const d = document.documentElement, t0 = performance.now();
@@ -422,7 +435,7 @@
       if (!d.classList.contains('loading')) return;
       d.classList.replace('loading', 'loaded');
       dispatchEvent(new Event('syncra:ready'));
-      setTimeout(() => document.getElementById('loader')?.remove(), 1100);
+      setTimeout(() => document.getElementById('loader')?.remove(), 1500);
     };
     addEventListener('load', () => setTimeout(done, Math.max(0, 2200 - (performance.now() - t0))), { once: true });
     setTimeout(done, 5000);
@@ -431,13 +444,14 @@
 </head>
 <body>
 <div id="loader" role="status" aria-label="Loading Syncra">
-  <span class="brand"><img src="/logo.svg" alt="" width="40" height="40" />syncra</span>
-  <svg viewBox="0 0 240 70" aria-hidden="true">
-    <path class="ld-a" d="M10 22 H230" />
-    <path class="ld-b" pathLength="1" d="M70 22 C96 22 94 54 120 54 C146 54 144 22 170 22" />
-    <circle class="ld-o" cx="70" cy="22" r="4.5" />
-    <circle class="ld-m" cx="170" cy="22" r="6" />
-  </svg>
+  <span class="brand"><img src="/logo.svg" alt="" width="48" height="48" />syncra</span>
+  <div class="ld-track" aria-hidden="true">
+    <svg viewBox="0 0 400 110">
+      <path class="ld-b" pathLength="1" d="M90 22 C140 22 140 92 200 92 C260 92 260 22 310 22" />
+      <circle class="ld-o" cx="90" cy="22" r="5" />
+      <circle class="ld-m" cx="310" cy="22" r="7" />
+    </svg>
+  </div>
   <p>syncing…</p>
 </div>
 <canvas id="bg" aria-hidden="true"></canvas>
