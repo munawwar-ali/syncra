@@ -83,7 +83,7 @@
   #stars { display: inline-block; min-width: 4.6em; white-space: pre; }
   .facts li:last-child { display: flex; align-items: center; }
   /* simulated pair of clients; real checkboxes, scripted transport */
-  .sim { border: 1px solid var(--ink); border-radius: .75rem; overflow: hidden; background: var(--ink); color: var(--ivory); box-shadow: inset 0 1px 0 #cdf22b80, 0 0 0 1px #cdf22b33, 0 1px 2px #08090b14, 0 10px 24px -8px #08090b33, 0 36px 72px -28px #08090b59; }
+  .sim { contain: layout style; border: 1px solid var(--ink); border-radius: .75rem; overflow: hidden; background: var(--ink); color: var(--ivory); box-shadow: inset 0 1px 0 #cdf22b80, 0 0 0 1px #cdf22b33, 0 1px 2px #08090b14; }
   .sim-bar { display: flex; justify-content: space-between; gap: 1rem; padding: .55rem .9rem; background: var(--ink-2); color: var(--muted-dark); font: .75rem "JetBrains Mono", monospace; }
   .sim-devs { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; padding: .9rem; }
   .dev { background: var(--ink-2); border: 1px solid #262a33; border-radius: .6rem; padding: .8rem; transition: border-color .4s; }
@@ -790,7 +790,7 @@
       for (const k in KEYS) d.box[k].checked = !!d.vals[k]?.[0];
       const s = i === 1 || phase === 'merged' ? phase : 'live';
       d.st.className = 'st ' + s;
-      d.st.textContent = s === 'offline' ? `offline · ${d.pend.size} unsynced` : s;
+      d.st.textContent = s;
     });
     net.textContent = online ? 'Go offline' : 'Reconnect'; net.setAttribute('aria-pressed', String(!online));
   };
@@ -806,7 +806,7 @@
       if (phase !== 'syncing') phase = 'live';
       setTimeout(() => { if (online) { merge(); paint(); } }, 350);
       log(call + (i ? 'phone' : 'laptop') + ': sent and broadcast');
-    } else { devs[i].pend.add(k); log(call + (i ? 'phone: saved on device, queued' : 'laptop: saved; phone is offline')); }
+    } else { devs[i].pend.add(k); log(call + (i ? `phone: saved on device, ${devs[1].pend.size} queued` : 'laptop: saved; phone is offline')); }
     paint();
   };
   const setOnline = (on) => {
@@ -831,10 +831,10 @@
 
   // autoplay: runs while in view; hover or focus pauses it, touching a control ends it until Replay
   const steps = [[800, reset], [1500, () => write(0, 'roof', true)], [1500, () => setOnline(false)], [1500, () => write(1, 'wiring', true)], [1700, () => write(0, 'exits', true)], [3400, () => setOnline(true)]];
-  let si = 0, timer = 0, seen = false, hover = false, focused = false, taken = reduce;
+  let si = 0, timer = 0, seen = false, hover = false, focused = false, taken = reduce, settled = false;
   const next = () => { const [ms, fn] = steps[si]; fn(); si = (si + 1) % steps.length; timer = setTimeout(next, ms); };
   const run = () => {
-    const go = seen && !hover && !focused && !taken;
+    const go = settled && seen && !hover && !focused && !taken;
     if (go && !playing) { playing = true; timer = setTimeout(next, 300); }
     else if (!go && playing) { playing = false; clearTimeout(timer); }
   };
@@ -853,18 +853,22 @@
     clearTimeout(timer); playing = false; si = 0; taken = hover = focused = false; run();
   });
   if (reduce) final(); else reset();
+  // start after the page has loaded and settled: DOM updates during load showed up as long tasks in Lighthouse
+  addEventListener('load', () => setTimeout(() => { settled = true; run(); loadStars(); }, 1000), { once: true });
   if ('IntersectionObserver' in window) new IntersectionObserver(([e]) => { seen = e.isIntersecting; run(); }, { threshold: .35 }).observe(sim);
   else { seen = true; run(); }
 
   /* live GitHub star count; on any failure the link shows without a number */
   const showStars = (n) => { if (Number.isInteger(n)) $('#stars').textContent = ` · ${new Intl.NumberFormat('en', { notation: 'compact' }).format(n)} ${n === 1 ? 'star' : 'stars'}`; };
-  let starCache = null;
-  try { starCache = JSON.parse(sessionStorage.getItem('syncra-stars')); } catch {}
-  if (starCache && Date.now() - starCache.at < 36e5) showStars(starCache.n);
-  else fetch('https://api.github.com/repos/munawwar-ali/syncra').then((r) => (r.ok ? r.json() : null)).then((j) => {
-    const n = j?.stargazers_count; showStars(n);
-    try { if (Number.isInteger(n)) sessionStorage.setItem('syncra-stars', JSON.stringify({ n, at: Date.now() })); } catch {}
-  }).catch(() => {});
+  function loadStars() {
+    let starCache = null;
+    try { starCache = JSON.parse(sessionStorage.getItem('syncra-stars')); } catch {}
+    if (starCache && Date.now() - starCache.at < 36e5) return showStars(starCache.n);
+    fetch('https://api.github.com/repos/munawwar-ali/syncra').then((r) => (r.ok ? r.json() : null)).then((j) => {
+      const n = j?.stargazers_count; showStars(n);
+      try { if (Number.isInteger(n)) sessionStorage.setItem('syncra-stars', JSON.stringify({ n, at: Date.now() })); } catch {}
+    }).catch(() => {});
+  }
 
   const cp = $('#cp'), cpSay = $('#cpSay'), cmd = $('#cmd');
   cp.addEventListener('click', () => {
