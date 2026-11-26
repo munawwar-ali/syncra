@@ -251,6 +251,13 @@
   .vc { position: absolute; left: 0; right: 0; bottom: 0; height: 3rem; display: flex; align-items: center; gap: .9rem; padding: 0 1rem; background: #0d0f13; border-top: 1px solid #262a33; z-index: 3; }
   .vc button { all: unset; cursor: pointer; width: 2rem; height: 2rem; display: grid; place-items: center; border-radius: 50%; background: var(--lime); color: var(--ink); font-size: .8rem; }
   .vc button:focus-visible { outline: 2px solid var(--ivory); outline-offset: 2px; }
+  /* big centre play/pause: always shown while paused; while playing it appears on hover or keyboard focus */
+  .vbig { all: unset; box-sizing: border-box; position: absolute; z-index: 4; left: 50%; top: calc(50% - 1.5rem); width: clamp(3.5rem, 9vw, 5.5rem); aspect-ratio: 1; margin: calc(clamp(3.5rem, 9vw, 5.5rem) / -2) 0 0 calc(clamp(3.5rem, 9vw, 5.5rem) / -2); display: grid; place-items: center; border-radius: 50%; background: var(--lime); color: var(--ink); cursor: pointer; box-shadow: 0 0 0 8px #cdf22b2e, 0 12px 30px #0009; transition: opacity .3s ease, transform .3s cubic-bezier(.2, .7, .2, 1); }
+  .vbig svg { width: 38%; height: 38%; fill: currentColor; }
+  .vbig:hover { transform: scale(1.07); }
+  .vbig:focus-visible { outline: 3px solid var(--ivory); outline-offset: 4px; }
+  .vid.playing .vbig { opacity: 0; transform: scale(.85); }
+  .vid.playing:hover .vbig, .vid.playing .vbig:focus-visible { opacity: 1; transform: none; }
   .vc .tr { flex: 1; height: 6px; background: #2a2e38; border-radius: 3px; position: relative; cursor: pointer; }
   .vc .fill { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--lime); border-radius: 3px; }
   .vc .tm { font: .75rem "JetBrains Mono", monospace; color: var(--muted-dark); min-width: 5rem; text-align: right; }
@@ -572,6 +579,7 @@
       </div>
 <i class="pt" style="--l:6%;--s:5px;--t:5s;--w:-1s"></i><i class="pt" style="--l:16%;--s:3px;--t:4s;--w:-3s"></i><i class="pt" style="--l:27%;--s:6px;--t:6s;--w:-2s"></i><i class="pt" style="--l:38%;--s:4px;--t:4.5s;--w:-0s"></i><i class="pt" style="--l:49%;--s:5px;--t:5.5s;--w:-4s"></i><i class="pt" style="--l:58%;--s:3px;--t:4s;--w:-2s"></i><i class="pt" style="--l:69%;--s:6px;--t:6s;--w:-5s"></i><i class="pt" style="--l:79%;--s:4px;--t:4.5s;--w:-1s"></i><i class="pt" style="--l:88%;--s:5px;--t:5s;--w:-3s"></i><i class="pt" style="--l:95%;--s:3px;--t:4s;--w:-0s"></i>
       <div class="flash" id="fl"></div>
+      <button type="button" class="vbig" id="vbig" aria-label="Play"></button>
       <div class="vc">
         <button id="vp" aria-label="Pause">&#10074;&#10074;</button>
         <div class="tr" id="vt" role="slider" aria-label="Seek" aria-valuemin="0" aria-valuemax="18" tabindex="0"><div class="fill" id="vf"></div></div>
@@ -1108,11 +1116,18 @@
     vtm += (ts - vlast) / 1000; vlast = ts; if (vtm >= total) vtm = 0;
     vrender(); requestAnimationFrame(vloop);
   };
-  const setPlay = (on) => { play = on; vp.innerHTML = on ? '&#10074;&#10074;' : '&#9654;'; vp.setAttribute('aria-label', on ? 'Pause' : 'Play'); if (on) { vlast = performance.now(); requestAnimationFrame(vloop); } };
-  vp.addEventListener('click', () => {
-    userPaused = play;
-    setPlay(!play);
-  });
+  const vbig = $('#vbig');
+  const ICON_PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z"/></svg>';
+  const ICON_PAUSE = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="5" height="16" rx="1.2"/><rect x="14" y="4" width="5" height="16" rx="1.2"/></svg>';
+  const setPlay = (on) => {
+    play = on; vp.innerHTML = on ? '&#10074;&#10074;' : '&#9654;';
+    vbig.innerHTML = on ? ICON_PAUSE : ICON_PLAY; vid.classList.toggle('playing', on);
+    for (const b of [vp, vbig]) b.setAttribute('aria-label', on ? 'Pause' : 'Play');
+    if (on) { vlast = performance.now(); requestAnimationFrame(vloop); }
+  };
+  const toggle = () => { userPaused = play; setPlay(!play); };
+  vp.addEventListener('click', toggle);
+  vbig.addEventListener('click', toggle);
   vt.addEventListener('click', (e) => { const r = vt.getBoundingClientRect(); vtm = Math.min(.999, Math.max(0, (e.clientX - r.left) / r.width)) * total; vrender(); });
   vt.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight') vtm = Math.min(total - .1, vtm + 2); else if (e.key === 'ArrowLeft') vtm = Math.max(0, vtm - 2); else return; vrender(); });
   vrender(); setPlay(false);
